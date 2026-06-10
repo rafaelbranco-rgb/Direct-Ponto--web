@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { BarChart3, History, MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
+import { Historico } from '../features/Historico';
 import { NavRail, type Aba } from '../features/NavRail';
 import { Settings } from '../features/Settings';
 import { CATEGORIAS, statusCor } from '../data/catalog';
@@ -96,7 +97,13 @@ export function Console() {
     return (
       <div className="flex h-full">
         <NavRail aba={aba} onAba={setAba} />
-        {aba === 'config' ? <Settings /> : <EmBreve aba={aba} />}
+        {aba === 'config' ? (
+          <Settings />
+        ) : aba === 'historico' ? (
+          <Historico chamados={chamados} />
+        ) : (
+          <EmBreve aba={aba} />
+        )}
       </div>
     );
   }
