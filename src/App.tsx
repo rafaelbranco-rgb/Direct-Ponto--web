@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/auth';
+import { ThemeProvider } from './context/theme';
 import { Console } from './pages/Console';
 import { Login } from './pages/Login';
 
@@ -17,10 +18,12 @@ function Rotas() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Rotas />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Rotas />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

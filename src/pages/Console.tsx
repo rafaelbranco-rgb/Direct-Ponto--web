@@ -3,6 +3,7 @@ import { BarChart3, History, MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
 import { NavRail, type Aba } from '../features/NavRail';
+import { Settings } from '../features/Settings';
 import { CATEGORIAS, STATUS_UI } from '../data/catalog';
 import { CHAMADOS, colaboradorPorId } from '../data/mock';
 import type { Chamado, StatusChamado } from '../data/types';
@@ -31,6 +32,7 @@ function ultima(c: Chamado) {
 export function Console() {
   const { gestor } = useAuth();
   const [aba, setAba] = useState<Aba>('atendimentos');
+  const [config, setConfig] = useState(false);
   const [chamados, setChamados] = useState<Chamado[]>(CHAMADOS);
   const [selId, setSelId] = useState<string | null>(CHAMADOS.find((c) => c.status === 'PENDENTE')?.id ?? null);
   const [busca, setBusca] = useState('');
@@ -92,8 +94,9 @@ export function Console() {
   if (aba !== 'atendimentos') {
     return (
       <div className="flex h-full">
-        <NavRail aba={aba} onAba={setAba} />
+        <NavRail aba={aba} onAba={setAba} onConfig={() => setConfig(true)} />
         <EmBreve aba={aba} />
+        <Settings aberto={config} onFechar={() => setConfig(false)} />
       </div>
     );
   }
@@ -101,11 +104,12 @@ export function Console() {
   return (
     <div className="flex h-full">
       {/* Aba lateral (opções/botões) */}
-      <NavRail aba={aba} onAba={setAba} />
+      <NavRail aba={aba} onAba={setAba} onConfig={() => setConfig(true)} />
+      <Settings aberto={config} onFechar={() => setConfig(false)} />
 
       <div className="flex min-h-0 flex-1">
         {/* Lista de chamados */}
-        <aside className="flex w-[360px] shrink-0 flex-col border-r border-line">
+        <aside className="glass flex w-[360px] shrink-0 flex-col border-r border-line">
           <div className="p-3">
             <div className="flex items-center gap-2 rounded-xl border border-line bg-surface/60 px-3 py-2">
               <Search size={17} className="text-ink-dim" />

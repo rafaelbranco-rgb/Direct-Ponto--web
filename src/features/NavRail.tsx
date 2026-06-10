@@ -1,4 +1,4 @@
-import { BarChart3, History, LogOut, MessageSquare, type LucideIcon } from 'lucide-react';
+import { BarChart3, History, LogOut, MessageSquare, Settings as SettingsIcon, type LucideIcon } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
@@ -12,7 +12,7 @@ const ITENS: { aba: Aba; icon: LucideIcon; label: string }[] = [
   { aba: 'relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
-export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
+export function NavRail({ aba, onAba, onConfig }: { aba: Aba; onAba: (a: Aba) => void; onConfig: () => void }) {
   const { gestor, sair } = useAuth();
 
   return (
@@ -25,10 +25,11 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
         ))}
       </div>
 
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1.5">
+        <RailBtn icon={SettingsIcon} label="Config." onClick={onConfig} />
         <div
           title={gestor?.nome}
-          className="grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft">
+          className="mt-1 grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft">
           {iniciais(gestor?.nome ?? 'Gestor')}
         </div>
         <RailBtn icon={LogOut} label="Sair" perigo onClick={sair} />

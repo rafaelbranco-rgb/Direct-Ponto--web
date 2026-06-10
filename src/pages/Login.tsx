@@ -93,7 +93,7 @@ export function Login() {
 
 function Campo({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-3 flex min-h-[52px] items-center gap-2 rounded-[13px] border border-[#3a4a66] bg-[#1a2840] px-4">
+    <div className="mt-3 flex min-h-[52px] items-center gap-2 rounded-[13px] border border-line bg-surface px-4">
       {children}
     </div>
   );
