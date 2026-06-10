@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+/* ───────── Identidade CONTATO (azul royal + dourado, base navy) ───────── */
+@theme {
+  --color-navy: #0b1220;
+  --color-navy-2: #101b30;
+  --color-navy-3: #0a111e;
+  --color-surface: #16233a;
+  --color-surface-2: #1f2f4c;
+  --color-line: #243150;
+  --color-brand: #2b57ad;
+  --color-brand-soft: #9dbbf0;
+  --color-brand-dark: #173a75;
+  --color-gold: #f2b63d;
+  --color-ink: #eef3fb;
+  --color-ink-dim: #9db0cc;
+
+  --font-brand: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(43, 87, 173, 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(242, 182, 61, 0.07), transparent 55%),
+    linear-gradient(160deg, #0b1220, #0e1a30 55%, #090f1b);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Vidro sutil (liquid glass), discreto e profissional */
+.glass {
+  background: rgba(22, 35, 58, 0.55);
+  border: 1px solid rgba(150, 176, 220, 0.16);
+  backdrop-filter: blur(12px);
+}
+.glass-strong {
+  background: rgba(16, 27, 49, 0.86);
+  border: 1px solid rgba(150, 176, 220, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+/* Scrollbar discreta */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 176, 220, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(150, 176, 220, 0.22);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 176, 220, 0.38);
+}
+
+/* Autofill no escuro (mesma lição do app) */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #eef3fb !important;
+  -webkit-box-shadow: 0 0 0 1000px #1a2840 inset !important;
+  text-shadow: none !important;
+  caret-color: #eef3fb;
+}
+
+.wordmark {
+  font-family: var(--font-brand);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
