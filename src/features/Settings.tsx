@@ -31,7 +31,7 @@ export function Settings() {
 
   return (
     <main className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="mx-auto max-w-3xl animate-fade-up px-6 py-8">
         {/* Cabeçalho */}
         <div className="mb-6 flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand/15 text-brand-soft">

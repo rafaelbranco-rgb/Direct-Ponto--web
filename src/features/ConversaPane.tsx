@@ -40,7 +40,7 @@ export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir,
   }
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col">
+    <section className="flex min-w-0 flex-1 flex-col animate-fade-in">
       {/* Cabeçalho da conversa */}
       <header className="glass-strong flex items-center gap-3 border-b border-line px-5 py-3">
         <div className="grid h-11 w-11 place-items-center rounded-full bg-brand/20 text-sm font-bold text-brand-soft">
@@ -176,7 +176,7 @@ function Bolha({ m, anterior }: { m: Mensagem; anterior?: Mensagem }) {
   const mostrarTopo = !anterior || anterior.autor !== m.autor;
 
   return (
-    <div className={`flex flex-col ${ehAtendente ? 'items-end' : 'items-start'}`}>
+    <div className={`flex animate-fade-up flex-col ${ehAtendente ? 'items-end' : 'items-start'}`}>
       {mostrarTopo && !ehAtendente && (
         <span className="mb-0.5 ml-1 text-[11px] font-semibold text-ink-dim">Colaborador</span>
       )}

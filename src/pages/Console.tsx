@@ -106,7 +106,7 @@ export function Console() {
       {/* Aba lateral (opções/botões) */}
       <NavRail aba={aba} onAba={setAba} />
 
-      <div className="flex min-h-0 flex-1">
+      <div key="atendimentos" className="flex min-h-0 flex-1 animate-fade-in">
         {/* Lista de chamados */}
         <aside className="glass flex w-[360px] shrink-0 flex-col border-r border-line">
           <div className="p-3">
@@ -212,7 +212,7 @@ function EmBreve({ aba }: { aba: Aba }) {
       : { Icon: BarChart3, titulo: 'Relatórios', txt: 'Relatórios por período, colaborador e tipo de ocorrência (em construção).' };
   const { Icon, titulo, txt } = info;
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ink-dim">
+    <div className="flex flex-1 animate-fade-up flex-col items-center justify-center gap-3 text-ink-dim">
       <Icon size={48} className="text-brand-soft" />
       <h2 className="text-xl font-bold text-ink">{titulo}</h2>
       <p className="max-w-sm text-center text-sm">{txt}</p>
