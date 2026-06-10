@@ -25,9 +25,42 @@ export const CATEGORIAS: Record<CategoriaCodigo, { label: string; icon: LucideIc
   BANCO_HORAS: { label: 'Banco de Horas', icon: Hourglass },
 };
 
-export const STATUS_UI: Record<StatusChamado, { label: string; bg: string; fg: string; dot: string }> = {
-  PENDENTE: { label: 'Pendente', bg: 'rgba(242,182,61,0.16)', fg: '#f2c879', dot: '#f2b63d' },
-  EM_ATENDIMENTO: { label: 'Em atendimento', bg: 'rgba(125,167,255,0.16)', fg: '#9dbbf0', dot: '#5e8cff' },
-  APROVADO: { label: 'Aprovado', bg: 'rgba(52,190,130,0.16)', fg: '#6fe0a6', dot: '#34be82' },
-  RECUSADO: { label: 'Recusado', bg: 'rgba(224,90,80,0.18)', fg: '#ff9c8e', dot: '#e05a50' },
+type Esquema = 'light' | 'dark';
+interface StatusVis {
+  label: string;
+  dot: string;
+  light: { bg: string; fg: string };
+  dark: { bg: string; fg: string };
+}
+
+export const STATUS_UI: Record<StatusChamado, StatusVis> = {
+  PENDENTE: {
+    label: 'Pendente',
+    dot: '#e6a92e',
+    light: { bg: '#fbeacb', fg: '#8a5e0c' },
+    dark: { bg: 'rgba(236,180,74,0.18)', fg: '#f2c879' },
+  },
+  EM_ATENDIMENTO: {
+    label: 'Em atendimento',
+    dot: '#4b7be0',
+    light: { bg: '#dde7fb', fg: '#27509e' },
+    dark: { bg: 'rgba(125,167,255,0.16)', fg: '#9dbbf0' },
+  },
+  APROVADO: {
+    label: 'Aprovado',
+    dot: '#2bb673',
+    light: { bg: '#d4f1e1', fg: '#157a45' },
+    dark: { bg: 'rgba(52,190,130,0.18)', fg: '#6fe0a6' },
+  },
+  RECUSADO: {
+    label: 'Recusado',
+    dot: '#e0574d',
+    light: { bg: '#fbdfdc', fg: '#b3301c' },
+    dark: { bg: 'rgba(224,90,80,0.18)', fg: '#ff9c8e' },
+  },
 };
+
+export function statusCor(status: StatusChamado, esquema: Esquema) {
+  const s = STATUS_UI[status];
+  return { ...s[esquema], dot: s.dot, label: s.label };
+}

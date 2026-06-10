@@ -4,7 +4,7 @@ import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
 import { iniciais } from '../lib/format';
 
-export type Aba = 'atendimentos' | 'historico' | 'relatorios';
+export type Aba = 'atendimentos' | 'historico' | 'relatorios' | 'config';
 
 const ITENS: { aba: Aba; icon: LucideIcon; label: string }[] = [
   { aba: 'atendimentos', icon: MessageSquare, label: 'Atendimentos' },
@@ -12,7 +12,7 @@ const ITENS: { aba: Aba; icon: LucideIcon; label: string }[] = [
   { aba: 'relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
-export function NavRail({ aba, onAba, onConfig }: { aba: Aba; onAba: (a: Aba) => void; onConfig: () => void }) {
+export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
   const { gestor, sair } = useAuth();
 
   return (
@@ -26,7 +26,7 @@ export function NavRail({ aba, onAba, onConfig }: { aba: Aba; onAba: (a: Aba) =>
       </div>
 
       <div className="flex flex-col items-center gap-1.5">
-        <RailBtn icon={SettingsIcon} label="Config." onClick={onConfig} />
+        <RailBtn icon={SettingsIcon} label="Config." ativo={aba === 'config'} onClick={() => onAba('config')} />
         <div
           title={gestor?.nome}
           className="mt-1 grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft">

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, FileText, Image as ImageIcon, Paperclip, Send, ThumbsDown, ThumbsUp, History } from 'lucide-react';
 
-import { CATEGORIAS, STATUS_UI } from '../data/catalog';
+import { CATEGORIAS, statusCor } from '../data/catalog';
 import { colaboradorPorId } from '../data/mock';
 import type { Chamado, Mensagem } from '../data/types';
+import { useTema } from '../context/theme';
 import { iniciais } from '../lib/format';
 
 interface Props {
@@ -15,9 +16,10 @@ interface Props {
 }
 
 export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir, onVerHistorico }: Props) {
+  const { esquema } = useTema();
   const colaborador = colaboradorPorId(chamado.colaboradorId);
   const cat = CATEGORIAS[chamado.categoria];
-  const st = STATUS_UI[chamado.status];
+  const st = statusCor(chamado.status, esquema);
   const Icon = cat.icon;
   const resolvido = chamado.status === 'APROVADO' || chamado.status === 'RECUSADO';
 

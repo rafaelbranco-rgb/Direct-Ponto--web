@@ -27,25 +27,25 @@
 }
 
 :root[data-theme='light'] {
-  --c-bg: #eef2f8;
-  --c-bg2: #f7f9fc;
-  --c-surface: #ffffff;
-  --c-surface2: #eaf0f8;
-  --c-line: #dce4f0;
-  --c-ink: #1b2a45;
-  --c-ink-dim: #5f6e88;
-  --c-brand: #2b57ad;
-  --c-brand-soft: #2b57ad;
-  --c-gold: #b07d16;
+  --c-bg: #dbe4f2;
+  --c-bg2: #e7eef9;
+  --c-surface: #f4f8fe;
+  --c-surface2: #e1eafa;
+  --c-line: #c6d4ea;
+  --c-ink: #142339;
+  --c-ink-dim: #51617e;
+  --c-brand: #2e5fbf;
+  --c-brand-soft: #2e5fbf;
+  --c-gold: #c98a17;
 
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-strong-bg: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(20, 40, 80, 0.1);
+  --glass-bg: rgba(244, 248, 254, 0.66);
+  --glass-strong-bg: rgba(238, 244, 253, 0.85);
+  --glass-border: rgba(38, 70, 130, 0.14);
 
   --page:
-    radial-gradient(1100px 560px at 100% -10%, rgba(43, 87, 173, 0.1), transparent 60%),
-    radial-gradient(820px 460px at -8% 112%, rgba(176, 125, 22, 0.06), transparent 55%),
-    linear-gradient(165deg, #e9eef6, #f3f6fb 55%, #e6edf6);
+    radial-gradient(1100px 560px at 100% -10%, rgba(46, 95, 191, 0.2), transparent 62%),
+    radial-gradient(820px 480px at -8% 112%, rgba(201, 138, 23, 0.12), transparent 58%),
+    linear-gradient(165deg, #d3deef, #e3ebf8 52%, #d6e0f1);
 }
 
 @theme {

@@ -4,10 +4,11 @@ import { BarChart3, History, MessageSquare, Search, Inbox } from 'lucide-react';
 import { ConversaPane } from '../features/ConversaPane';
 import { NavRail, type Aba } from '../features/NavRail';
 import { Settings } from '../features/Settings';
-import { CATEGORIAS, STATUS_UI } from '../data/catalog';
+import { CATEGORIAS, statusCor } from '../data/catalog';
 import { CHAMADOS, colaboradorPorId } from '../data/mock';
 import type { Chamado, StatusChamado } from '../data/types';
 import { useAuth } from '../context/auth';
+import { useTema } from '../context/theme';
 import { diaMes, horaAgora, iniciais } from '../lib/format';
 
 type Filtro = 'TODOS' | 'PENDENTE' | 'EM_ATENDIMENTO' | 'RESOLVIDO';
@@ -31,8 +32,8 @@ function ultima(c: Chamado) {
 
 export function Console() {
   const { gestor } = useAuth();
+  const { esquema } = useTema();
   const [aba, setAba] = useState<Aba>('atendimentos');
-  const [config, setConfig] = useState(false);
   const [chamados, setChamados] = useState<Chamado[]>(CHAMADOS);
   const [selId, setSelId] = useState<string | null>(CHAMADOS.find((c) => c.status === 'PENDENTE')?.id ?? null);
   const [busca, setBusca] = useState('');
@@ -94,9 +95,8 @@ export function Console() {
   if (aba !== 'atendimentos') {
     return (
       <div className="flex h-full">
-        <NavRail aba={aba} onAba={setAba} onConfig={() => setConfig(true)} />
-        <EmBreve aba={aba} />
-        <Settings aberto={config} onFechar={() => setConfig(false)} />
+        <NavRail aba={aba} onAba={setAba} />
+        {aba === 'config' ? <Settings /> : <EmBreve aba={aba} />}
       </div>
     );
   }
@@ -104,8 +104,7 @@ export function Console() {
   return (
     <div className="flex h-full">
       {/* Aba lateral (opções/botões) */}
-      <NavRail aba={aba} onAba={setAba} onConfig={() => setConfig(true)} />
-      <Settings aberto={config} onFechar={() => setConfig(false)} />
+      <NavRail aba={aba} onAba={setAba} />
 
       <div className="flex min-h-0 flex-1">
         {/* Lista de chamados */}
@@ -154,7 +153,7 @@ export function Console() {
             {lista.map((c) => {
               const colab = colaboradorPorId(c.colaboradorId);
               const cat = CATEGORIAS[c.categoria];
-              const st = STATUS_UI[c.status];
+              const st = statusCor(c.status, esquema);
               const u = ultima(c);
               const ativo = c.id === selId;
               const preview = u?.texto || (u?.anexo ? 'Anexo enviado' : u?.data) || '';
