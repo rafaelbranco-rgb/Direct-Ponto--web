@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, History, MessageSquare, Search, Inbox } from 'lucide-react';
+import { MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
 import { Historico } from '../features/Historico';
 import { NavRail, type Aba } from '../features/NavRail';
+import { Relatorios } from '../features/Relatorios';
 import { Settings } from '../features/Settings';
 import { CATEGORIAS, statusCor } from '../data/catalog';
 import { CHAMADOS, colaboradorPorId } from '../data/mock';
@@ -130,7 +131,7 @@ export function Console() {
         ) : aba === 'historico' ? (
           <Historico chamados={chamados} />
         ) : (
-          <EmBreve aba={aba} />
+          <Relatorios chamados={chamados} />
         )}
       </div>
     );
@@ -328,17 +329,3 @@ function Vazio({ texto }: { texto: string }) {
   );
 }
 
-function EmBreve({ aba }: { aba: Aba }) {
-  const info =
-    aba === 'historico'
-      ? { Icon: History, titulo: 'Histórico', txt: 'Histórico consolidado de solicitações por colaborador (em construção).' }
-      : { Icon: BarChart3, titulo: 'Relatórios', txt: 'Relatórios por período, colaborador e tipo de ocorrência (em construção).' };
-  const { Icon, titulo, txt } = info;
-  return (
-    <div className="flex flex-1 animate-fade-up flex-col items-center justify-center gap-3 text-ink-dim">
-      <Icon size={48} className="text-brand-soft" />
-      <h2 className="text-xl font-bold text-ink">{titulo}</h2>
-      <p className="max-w-sm text-center text-sm">{txt}</p>
-    </div>
-  );
-}
