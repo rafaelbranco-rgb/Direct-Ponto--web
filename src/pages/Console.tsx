@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { MessageSquare, Search, Inbox } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Loader2, MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
 import { Historico } from '../features/Historico';
 import { NavRail, type Aba } from '../features/NavRail';
-import { Relatorios } from '../features/Relatorios';
 import { Settings } from '../features/Settings';
+
+// Relatórios usa Recharts (pesado) — carrega só quando a aba é aberta.
+const Relatorios = lazy(() => import('../features/Relatorios').then((m) => ({ default: m.Relatorios })));
 import { CATEGORIAS, statusCor } from '../data/catalog';
 import { CHAMADOS, colaboradorPorId } from '../data/mock';
 import type { Chamado } from '../data/types';
@@ -150,7 +152,14 @@ export function Console() {
         ) : aba === 'historico' ? (
           <Historico chamados={chamados} />
         ) : (
-          <Relatorios chamados={chamados} />
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center text-ink-dim">
+                <Loader2 size={28} className="animate-spin" />
+              </div>
+            }>
+            <Relatorios chamados={chamados} />
+          </Suspense>
         )}
       </div>
     );

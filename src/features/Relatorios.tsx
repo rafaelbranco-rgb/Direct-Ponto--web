@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -10,11 +10,23 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import { CATEGORIAS, STATUS_UI } from '../data/catalog';
 import { colaboradorPorId } from '../data/mock';
 import type { CategoriaCodigo, Chamado, StatusChamado } from '../data/types';
-import { useTema } from '../context/theme';
 import { exportarChamadosCSV, exportarRelatorioPDF } from '../lib/export';
 import { iniciais } from '../lib/format';
 
@@ -27,9 +39,10 @@ const PERIODOS: { dias: Periodo; label: string }[] = [
 ];
 
 const ABERTO: StatusChamado[] = ['PENDENTE', 'EM_ATENDIMENTO'];
+const COR_CAT = 'var(--c-gold)';
+const COR_SETOR = 'var(--c-brand-soft)';
 
 export function Relatorios({ chamados }: { chamados: Chamado[] }) {
-  const { esquema } = useTema();
   const [periodo, setPeriodo] = useState<Periodo>(0);
 
   const dados = useMemo(() => {
@@ -44,29 +57,20 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
     const emAberto = base.filter((c) => ABERTO.includes(c.status)).length;
     const taxa = resolvidos ? Math.round((aprovados / resolvidos) * 100) : 0;
 
-    // Por tipo de ocorrência
     const porCategoria = new Map<CategoriaCodigo, number>();
     for (const c of base) porCategoria.set(c.categoria, (porCategoria.get(c.categoria) ?? 0) + 1);
     const categorias = [...porCategoria.entries()]
-      .map(([cod, n]) => ({ cod, n, label: CATEGORIAS[cod].label, icon: CATEGORIAS[cod].icon }))
+      .map(([cod, n]) => ({ cod, n, label: CATEGORIAS[cod].label }))
       .sort((a, b) => b.n - a.n);
 
-    // Por status
-    const status = (Object.keys(STATUS_UI) as StatusChamado[]).map((s) => ({
-      s,
-      n: conta(s),
-      label: STATUS_UI[s].label,
-      cor: STATUS_UI[s].dot,
-    }));
+    const status = (Object.keys(STATUS_UI) as StatusChamado[])
+      .map((s) => ({ s, n: conta(s), label: STATUS_UI[s].label, cor: STATUS_UI[s].dot }))
+      .filter((x) => x.n > 0);
 
-    // Por atendente
     const porAtendente = new Map<string, number>();
     for (const c of base) if (c.atendente) porAtendente.set(c.atendente, (porAtendente.get(c.atendente) ?? 0) + 1);
-    const atendentes = [...porAtendente.entries()]
-      .map(([nome, n]) => ({ nome, n }))
-      .sort((a, b) => b.n - a.n);
+    const atendentes = [...porAtendente.entries()].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
 
-    // Por setor
     const porSetor = new Map<string, number>();
     for (const c of base) {
       const setor = colaboradorPorId(c.colaboradorId)?.setor ?? '—';
@@ -80,11 +84,11 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
   const vazio = dados.total === 0;
   const periodoLabel = PERIODOS.find((p) => p.dias === periodo)!.label;
   const sufixo = periodo ? `${periodo}d` : 'tudo';
+  const maxAtend = Math.max(1, ...dados.atendentes.map((a) => a.n));
 
   function exportarCSV() {
     exportarChamadosCSV(dados.base, sufixo);
   }
-
   function exportarPDF() {
     exportarRelatorioPDF({
       periodoLabel,
@@ -105,7 +109,6 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
 
   return (
     <section className="flex min-h-0 flex-1 animate-fade-in flex-col">
-      {/* Cabeçalho */}
       <header className="glass-strong flex items-center justify-between gap-3 border-b border-line px-6 py-4">
         <div>
           <h1 className="text-xl font-bold text-ink">Relatórios</h1>
@@ -142,7 +145,7 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 py-5">
-        <div className="mx-auto max-w-[980px]">
+        <div className="mx-auto max-w-[1000px]">
           {vazio ? (
             <div className="mt-24 flex flex-col items-center gap-2 text-ink-dim">
               <Inbox size={40} />
@@ -152,72 +155,134 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
             <>
               {/* KPIs */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Kpi icon={MessageSquare} cor="#4b7be0" label="Total de chamados" valor={dados.total} />
-                <Kpi icon={Clock} cor="#e6a92e" label="Em aberto" valor={dados.emAberto} />
-                <Kpi icon={CheckCircle2} cor="#2bb673" label="Aprovados" valor={dados.aprovados} />
-                <Kpi
-                  icon={ThumbsUp}
-                  cor="#7c5cff"
-                  label="Taxa de aprovação"
-                  valor={`${dados.taxa}%`}
-                  rodape={`${dados.resolvidos} resolvido(s)`}
-                />
+                <Kpi i={0} icon={MessageSquare} cor="#4b7be0" label="Total de chamados" valor={dados.total} />
+                <Kpi i={1} icon={Clock} cor="#e6a92e" label="Em aberto" valor={dados.emAberto} />
+                <Kpi i={2} icon={CheckCircle2} cor="#2bb673" label="Aprovados" valor={dados.aprovados} />
+                <Kpi i={3} icon={ThumbsUp} cor="#7c5cff" label="Taxa de aprovação" valor={dados.taxa} sufixoValor="%" rodape={`${dados.resolvidos} resolvido(s)`} />
               </div>
 
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
-                {/* Por tipo de ocorrência */}
-                <Painel titulo="Por tipo de ocorrência">
-                  <div className="flex flex-col gap-3">
-                    {dados.categorias.map((c) => (
-                      <Barra
-                        key={c.cod}
-                        icone={c.icon}
-                        label={c.label}
-                        n={c.n}
-                        max={dados.categorias[0].n}
-                        cor="#d9a73a"
-                      />
-                    ))}
-                  </div>
-                </Painel>
-
-                {/* Por status */}
-                <Painel titulo="Por status">
-                  <div className="flex flex-col gap-3">
-                    {dados.status.map((s) => (
-                      <Barra key={s.s} label={s.label} n={s.n} max={dados.total} cor={s.cor} ponto />
-                    ))}
-                  </div>
-                </Painel>
-
-                {/* Por atendente */}
-                <Painel titulo="Por atendente">
-                  {dados.atendentes.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-ink-dim">Nenhum atendimento atribuído.</p>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      {dados.atendentes.map((a) => (
-                        <div key={a.nome} className="flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-surface/60">
-                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
-                            {iniciais(a.nome)}
-                          </div>
-                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{a.nome}</span>
-                          <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-bold text-ink-dim">
-                            {a.n}
+                {/* Donut — status */}
+                <Painel titulo="Distribuição por status" delay={60}>
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-[200px] w-[200px] shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={dados.status}
+                            dataKey="n"
+                            nameKey="label"
+                            innerRadius={58}
+                            outerRadius={92}
+                            paddingAngle={2}
+                            stroke="none"
+                            animationDuration={900}
+                            animationEasing="ease-out">
+                            {dados.status.map((s) => (
+                              <Cell key={s.s} fill={s.cor} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<DicaGrafico />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-extrabold text-ink">{dados.total}</span>
+                        <span className="text-[11px] text-ink-dim">chamados</span>
+                      </div>
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      {dados.status.map((s) => (
+                        <div key={s.s} className="flex items-center gap-2 text-sm">
+                          <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: s.cor }} />
+                          <span className="min-w-0 flex-1 truncate text-ink-dim">{s.label}</span>
+                          <span className="font-bold text-ink">{s.n}</span>
+                          <span className="w-10 text-right text-xs text-ink-dim">
+                            {Math.round((s.n / dados.total) * 100)}%
                           </span>
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </Painel>
 
-                {/* Por setor */}
-                <Painel titulo="Por setor">
-                  <div className="flex flex-col gap-3">
-                    {dados.setores.map((s) => (
-                      <Barra key={s.setor} label={s.setor} n={s.n} max={dados.setores[0].n} cor="#4b7be0" />
-                    ))}
+                {/* Barras horizontais — tipo de ocorrência */}
+                <Painel titulo="Por tipo de ocorrência" delay={120}>
+                  <div style={{ height: Math.max(180, dados.categorias.length * 40) }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dados.categorias} layout="vertical" margin={{ left: 6, right: 28, top: 4, bottom: 4 }}>
+                        <CartesianGrid horizontal={false} stroke="var(--c-line)" strokeDasharray="3 3" />
+                        <XAxis type="number" hide allowDecimals={false} />
+                        <YAxis
+                          type="category"
+                          dataKey="label"
+                          width={130}
+                          tick={{ fill: 'var(--c-ink-dim)', fontSize: 12 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip cursor={{ fill: 'var(--c-surface2)', opacity: 0.35 }} content={<DicaGrafico />} />
+                        <Bar dataKey="n" fill={COR_CAT} radius={[0, 6, 6, 0]} barSize={18} animationDuration={900} animationEasing="ease-out">
+                          <LabelList dataKey="n" position="right" fill="var(--c-ink-dim)" fontSize={12} fontWeight={700} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
+                </Painel>
+
+                {/* Barras verticais — setor */}
+                <Painel titulo="Por setor" delay={180}>
+                  <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dados.setores} margin={{ left: -16, right: 8, top: 8, bottom: 4 }}>
+                        <CartesianGrid vertical={false} stroke="var(--c-line)" strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="setor"
+                          tick={{ fill: 'var(--c-ink-dim)', fontSize: 11 }}
+                          tickLine={false}
+                          axisLine={false}
+                          interval={0}
+                        />
+                        <YAxis allowDecimals={false} tick={{ fill: 'var(--c-ink-dim)', fontSize: 11 }} tickLine={false} axisLine={false} width={32} />
+                        <Tooltip cursor={{ fill: 'var(--c-surface2)', opacity: 0.35 }} content={<DicaGrafico chave="setor" />} />
+                        <Bar dataKey="n" fill={COR_SETOR} radius={[6, 6, 0, 0]} barSize={36} animationDuration={900} animationEasing="ease-out">
+                          <LabelList dataKey="n" position="top" fill="var(--c-ink-dim)" fontSize={12} fontWeight={700} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Painel>
+
+                {/* Ranking — atendente */}
+                <Painel titulo="Por atendente" delay={240}>
+                  {dados.atendentes.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-ink-dim">Nenhum atendimento atribuído.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {dados.atendentes.map((a, i) => (
+                        <div key={a.nome} className="flex items-center gap-3">
+                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
+                            {iniciais(a.nome)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                              <span className="truncate font-semibold text-ink">{a.nome}</span>
+                              <span className="shrink-0 font-bold text-ink-dim">{a.n}</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+                              <div
+                                className="h-full rounded-full bg-brand"
+                                style={{
+                                  width: `${(a.n / maxAtend) * 100}%`,
+                                  animation: 'crescer-barra 0.9s cubic-bezier(0.2,0.84,0.2,1) both',
+                                  animationDelay: `${260 + i * 70}ms`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Painel>
               </div>
 
@@ -228,75 +293,88 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
           )}
         </div>
       </div>
+
+      {/* keyframe da barra do ranking (não depende de bibliotecas) */}
+      <style>{`@keyframes crescer-barra { from { width: 0 } }`}</style>
     </section>
   );
 }
 
+/** Tooltip dos gráficos no tema do app. */
+function DicaGrafico({ active, payload, chave }: { active?: boolean; payload?: any[]; chave?: string }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0];
+  const titulo = p.payload?.[chave ?? 'label'] ?? p.name;
+  return (
+    <div className="glass-strong rounded-lg border border-line px-3 py-2 text-xs shadow-xl">
+      <div className="font-semibold text-ink">{titulo}</div>
+      <div className="text-ink-dim">{p.value} chamado(s)</div>
+    </div>
+  );
+}
+
+function useContagem(alvo: number, dur = 700) {
+  const [v, setV] = useState(0);
+  const ref = useRef(0);
+  useEffect(() => {
+    const inicio = performance.now();
+    const de = ref.current;
+    let raf = 0;
+    const passo = (agora: number) => {
+      const p = Math.min(1, (agora - inicio) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      const atual = de + (alvo - de) * e;
+      setV(atual);
+      ref.current = atual;
+      if (p < 1) raf = requestAnimationFrame(passo);
+      else ref.current = alvo;
+    };
+    raf = requestAnimationFrame(passo);
+    return () => cancelAnimationFrame(raf);
+  }, [alvo, dur]);
+  return Math.round(v);
+}
+
 function Kpi({
+  i,
   icon: Icon,
   cor,
   label,
   valor,
+  sufixoValor,
   rodape,
 }: {
+  i: number;
   icon: LucideIcon;
   cor: string;
   label: string;
-  valor: number | string;
+  valor: number;
+  sufixoValor?: string;
   rodape?: string;
 }) {
+  const n = useContagem(valor);
   return (
-    <div className="glass rounded-2xl border border-line p-4">
+    <div className="glass animate-fade-up rounded-2xl border border-line p-4" style={{ animationDelay: `${i * 60}ms` }}>
       <div className="flex items-center gap-2">
         <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ background: `${cor}22`, color: cor }}>
           <Icon size={18} />
         </span>
         <span className="text-xs font-semibold text-ink-dim">{label}</span>
       </div>
-      <div className="mt-2 text-3xl font-extrabold text-ink">{valor}</div>
+      <div className="mt-2 text-3xl font-extrabold text-ink">
+        {n}
+        {sufixoValor}
+      </div>
       {rodape && <div className="text-[11px] text-ink-dim">{rodape}</div>}
     </div>
   );
 }
 
-function Painel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Painel({ titulo, children, delay = 0 }: { titulo: string; children: React.ReactNode; delay?: number }) {
   return (
-    <div className="glass rounded-2xl border border-line p-4">
+    <div className="glass animate-fade-up rounded-2xl border border-line p-4" style={{ animationDelay: `${delay}ms` }}>
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">{titulo}</h2>
       {children}
-    </div>
-  );
-}
-
-function Barra({
-  icone: Icone,
-  label,
-  n,
-  max,
-  cor,
-  ponto,
-}: {
-  icone?: LucideIcon;
-  label: string;
-  n: number;
-  max: number;
-  cor: string;
-  ponto?: boolean;
-}) {
-  const pct = max > 0 ? Math.round((n / max) * 100) : 0;
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-        <span className="flex min-w-0 items-center gap-1.5 text-ink">
-          {Icone && <Icone size={14} className="shrink-0 text-gold" />}
-          {ponto && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: cor }} />}
-          <span className="truncate">{label}</span>
-        </span>
-        <span className="shrink-0 font-bold text-ink-dim">{n}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: cor }} />
-      </div>
     </div>
   );
 }
