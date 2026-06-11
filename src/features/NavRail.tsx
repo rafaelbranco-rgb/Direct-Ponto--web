@@ -47,7 +47,7 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
   }
 
   return (
-    <nav className="glass-strong flex w-[84px] shrink-0 flex-col items-center border-r border-line py-3">
+    <nav className="glass-strong relative z-50 flex w-[84px] shrink-0 flex-col items-center border-r border-line py-3">
       <Logo size={42} />
 
       <div className="mt-4 flex flex-1 flex-col gap-1.5">
