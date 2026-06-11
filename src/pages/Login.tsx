@@ -5,22 +5,38 @@ import { ArrowRight, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
 import { ATENDENTES } from '../data/mock';
+import { apiAtiva } from '../lib/api';
 
 export function Login() {
   const navigate = useNavigate();
-  const { entrar } = useAuth();
+  const { entrar, entrarApi } = useAuth();
   const [identificador, setIdentificador] = useState('');
   const [senha, setSenha] = useState('');
   const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
 
-  function fazerLogin(e: React.FormEvent) {
+  async function fazerLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!identificador.trim() || !senha.trim()) {
       setErro('Informe seu CPF/matrícula e a senha.');
       return;
     }
-    // TODO: autenticar no backend (contas criadas no sistema). Hoje entra como um atendente de demonstração.
+    if (apiAtiva) {
+      // Login real contra o backend.
+      setEnviando(true);
+      setErro('');
+      try {
+        await entrarApi(identificador.trim(), senha);
+        navigate('/');
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : 'Não foi possível entrar.');
+      } finally {
+        setEnviando(false);
+      }
+      return;
+    }
+    // Modo demonstração (sem backend): entra como um atendente fictício.
     const demo = ATENDENTES.find((a) => a.papel === 'atendente') ?? ATENDENTES[0];
     entrar({ nome: demo.nome, identificador: identificador.trim(), papel: demo.papel });
     navigate('/');
@@ -82,8 +98,9 @@ export function Login() {
 
           <button
             type="submit"
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] bg-brand py-3 font-bold text-white shadow-[0_8px_22px_rgba(43,87,173,0.45)] transition hover:brightness-110 active:scale-[0.99]">
-            Entrar <ArrowRight size={18} />
+            disabled={enviando}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] bg-brand py-3 font-bold text-white shadow-[0_8px_22px_rgba(43,87,173,0.45)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60">
+            {enviando ? 'Entrando…' : 'Entrar'} <ArrowRight size={18} />
           </button>
         </form>
 

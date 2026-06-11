@@ -6,7 +6,14 @@ import { Console } from './pages/Console';
 import { Login } from './pages/Login';
 
 function Rotas() {
-  const { gestor } = useAuth();
+  const { gestor, carregando } = useAuth();
+  if (carregando) {
+    return (
+      <div className="flex h-full items-center justify-center text-ink-dim">
+        <span className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-brand" />
+      </div>
+    );
+  }
   return (
     <Routes>
       <Route path="/login" element={gestor ? <Navigate to="/" replace /> : <Login />} />
