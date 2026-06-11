@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
@@ -13,7 +13,15 @@ import { CHAMADOS, colaboradorPorId } from '../data/mock';
 import type { Chamado } from '../data/types';
 import { useAuth } from '../context/auth';
 import { useTema } from '../context/theme';
+import { api, apiAtiva, conectarSocket, desconectarSocket } from '../lib/api';
+import { adaptarChamado } from '../lib/adapters';
 import { diaMes, horaAgora, iniciais, tempoEspera } from '../lib/format';
+
+interface AtendenteOpcao {
+  id: string;
+  nome: string;
+  setor: string;
+}
 
 /** Grupo do atendimento (fixo neste módulo, espelha o Nexti). */
 const GRUPO = 'Justificativas · Ponto';
@@ -26,17 +34,23 @@ export function Console() {
   const { gestor } = useAuth();
   const { esquema } = useTema();
   const [aba, setAba] = useState<Aba>('atendimentos');
-  const [chamados, setChamados] = useState<Chamado[]>(CHAMADOS);
-  const [selId, setSelId] = useState<string | null>(CHAMADOS.find((c) => c.status === 'PENDENTE')?.id ?? null);
+  const [chamados, setChamados] = useState<Chamado[]>(apiAtiva ? [] : CHAMADOS);
+  const [selId, setSelId] = useState<string | null>(
+    apiAtiva ? null : (CHAMADOS.find((c) => c.status === 'PENDENTE')?.id ?? null),
+  );
   const [busca, setBusca] = useState('');
   const [verEncerrados, setVerEncerrados] = useState(false);
   const [colabFiltro, setColabFiltro] = useState<string | null>(null);
+  const [atendentes, setAtendentes] = useState<AtendenteOpcao[] | undefined>(undefined);
 
   const selecionado = chamados.find((c) => c.id === selId) ?? null;
+  const selIdRef = useRef<string | null>(selId);
+  selIdRef.current = selId;
 
   // Supervisor/RH vê tudo; atendente vê apenas os chamados atribuídos a ele.
   const supervisor = gestor?.papel === 'supervisor';
-  const meu = (c: Chamado) => supervisor || c.atendente === gestor?.nome;
+  const meu = (c: Chamado) =>
+    supervisor || (gestor?.id ? c.atendenteId === gestor.id : c.atendente === gestor?.nome);
 
   // Relatórios é exclusivo do supervisor/RH: ao rebaixar o papel, sai da aba.
   useEffect(() => {
@@ -73,14 +87,72 @@ export function Console() {
     setChamados((prev) => prev.map((c) => (c.id === id ? fn(c) : c)));
   }
 
-  /** Abre um chamado e zera o contador de mensagens não lidas. */
+  // ——— Modo backend: carrega as filas e o detalhe de um chamado ———
+  async function carregar() {
+    try {
+      const f = await api.listarChamados();
+      const todos = [...f.emEspera, ...f.emAtendimento, ...f.encerrados].map(adaptarChamado);
+      setChamados(todos);
+    } catch {
+      /* mantém o que já está na tela */
+    }
+  }
+  async function abrirDetalhe(id: string) {
+    try {
+      const ad = adaptarChamado(await api.detalhe(id));
+      setChamados((prev) => {
+        const i = prev.findIndex((c) => c.id === id);
+        if (i < 0) return [ad, ...prev];
+        const cp = [...prev];
+        cp[i] = ad;
+        return cp;
+      });
+    } catch {
+      /* ignora */
+    }
+  }
+
+  // Com backend ativo: carrega dados + atendentes e liga o tempo real.
+  useEffect(() => {
+    if (!apiAtiva) return;
+    carregar();
+    api
+      .listarAtendentes()
+      .then((lst) => setAtendentes(lst.map((a) => ({ id: a.id, nome: a.nome, setor: a.setor ?? '' }))))
+      .catch(() => {});
+    const s = conectarSocket();
+    if (s) {
+      const recarregar = () => {
+        carregar();
+        if (selIdRef.current) abrirDetalhe(selIdRef.current);
+      };
+      s.on('chamado:novo', recarregar);
+      s.on('chamado:atualizado', recarregar);
+    }
+    return () => desconectarSocket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Abre um chamado (carrega a conversa no backend; zera não lidas no demo). */
   function selecionar(id: string) {
     setSelId(id);
-    atualizar(id, (c) => (c.naoLidas ? { ...c, naoLidas: 0 } : c));
+    if (apiAtiva) abrirDetalhe(id);
+    else atualizar(id, (c) => (c.naoLidas ? { ...c, naoLidas: 0 } : c));
   }
 
   /** Puxa um chamado em espera para atendimento e abre a conversa. */
-  function atender(c: Chamado) {
+  async function atender(c: Chamado) {
+    setSelId(c.id);
+    if (apiAtiva) {
+      try {
+        await api.atender(c.id);
+        await carregar();
+        await abrirDetalhe(c.id);
+      } catch {
+        /* ignora */
+      }
+      return;
+    }
     const nome = gestor?.nome ?? 'Gestor';
     atualizar(c.id, (ch) => ({
       ...ch,
@@ -97,11 +169,20 @@ export function Console() {
         },
       ],
     }));
-    setSelId(c.id);
   }
 
-  function enviar(texto: string) {
+  async function enviar(texto: string) {
     if (!selecionado) return;
+    if (apiAtiva) {
+      try {
+        await api.enviarMensagem(selecionado.id, texto);
+        await abrirDetalhe(selecionado.id);
+        await carregar();
+      } catch {
+        /* ignora */
+      }
+      return;
+    }
     atualizar(selecionado.id, (c) => ({
       ...c,
       status: c.status === 'PENDENTE' ? 'EM_ATENDIMENTO' : c.status,
@@ -110,8 +191,18 @@ export function Console() {
     }));
   }
 
-  function decidir(decisao: 'APROVADO' | 'RECUSADO', motivo?: string) {
+  async function decidir(decisao: 'APROVADO' | 'RECUSADO', motivo?: string) {
     if (!selecionado) return;
+    if (apiAtiva) {
+      try {
+        await api.decidir(selecionado.id, decisao, motivo);
+        await carregar();
+        await abrirDetalhe(selecionado.id);
+      } catch {
+        /* ignora */
+      }
+      return;
+    }
     const txt =
       decisao === 'APROVADO'
         ? `Protocolo ${selecionado.protocolo} — Atendimento finalizado por ${gestor?.nome ?? 'Gestor'} (Aprovado)`
@@ -125,16 +216,26 @@ export function Console() {
     }));
   }
 
-  function transferir(atendente: string) {
+  async function transferir(atendenteId: string, nome: string) {
     if (!selecionado) return;
+    if (apiAtiva) {
+      try {
+        await api.transferir(selecionado.id, atendenteId);
+        await carregar();
+        await abrirDetalhe(selecionado.id);
+      } catch {
+        /* ignora */
+      }
+      return;
+    }
     const anterior = selecionado.atendente;
     const txt = anterior
-      ? `Protocolo ${selecionado.protocolo} — Atendimento transferido de ${anterior} para ${atendente}`
-      : `Protocolo ${selecionado.protocolo} — Atendimento atribuído a ${atendente}`;
+      ? `Protocolo ${selecionado.protocolo} — Atendimento transferido de ${anterior} para ${nome}`
+      : `Protocolo ${selecionado.protocolo} — Atendimento atribuído a ${nome}`;
     atualizar(selecionado.id, (c) => ({
       ...c,
       status: c.status === 'PENDENTE' ? 'EM_ATENDIMENTO' : c.status,
-      atendente,
+      atendente: nome,
       mensagens: [...c.mensagens, { id: `t-${Date.now()}`, autor: 'SISTEMA', texto: txt, data: `Hoje às ${horaAgora()}h` }],
     }));
   }
@@ -291,6 +392,7 @@ export function Console() {
             key={selecionado.id}
             chamado={selecionado}
             totalDoColaborador={totalDoColaborador}
+            atendentes={atendentes}
             onEnviar={enviar}
             onDecidir={decidir}
             onVerHistorico={() => setColabFiltro(selecionado.colaboradorId)}

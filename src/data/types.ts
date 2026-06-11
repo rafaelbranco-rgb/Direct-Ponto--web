@@ -53,8 +53,10 @@ export interface Chamado {
   descricao: string;
   temAnexo?: boolean;
   criadoEm: string; // ISO
-  /** atendente responsável (gestor) */
+  /** atendente responsável (gestor) — nome para exibição */
   atendente?: string;
+  /** id do atendente responsável (modo backend) */
+  atendenteId?: string;
   motivoRecusa?: string;
   /** mensagens do colaborador ainda não lidas pelo gestor */
   naoLidas?: number;

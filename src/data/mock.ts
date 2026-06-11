@@ -8,8 +8,14 @@ export const COLABORADORES: Colaborador[] = [
   { id: 'c5', nome: 'Carlos Eduardo Lima', matricula: '1005', cpf: '222.333.444-55', setor: 'Portaria' },
 ];
 
+/** Registro em tempo de execução de colaboradores vindos do backend. */
+const registroColaboradores = new Map<string, Colaborador>();
+export function registrarColaborador(c: Colaborador) {
+  registroColaboradores.set(c.id, c);
+}
+
 export function colaboradorPorId(id: string) {
-  return COLABORADORES.find((c) => c.id === id);
+  return registroColaboradores.get(id) ?? COLABORADORES.find((c) => c.id === id);
 }
 
 /** Atendentes do console. `supervisor` vê tudo + relatórios; `atendente` atende a própria fila. */

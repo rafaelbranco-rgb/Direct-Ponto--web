@@ -8,6 +8,8 @@ import {
   MessageSquare,
   Monitor,
   Moon,
+  RotateCcw,
+  Search,
   Settings as SettingsIcon,
   Shield,
   Sun,
@@ -19,6 +21,7 @@ import {
 import { useAuth } from '../context/auth';
 import { useTema, type Tema } from '../context/theme';
 import { ATENDENTES } from '../data/mock';
+import { api, apiAtiva, type UsuarioApi } from '../lib/api';
 import { iniciais } from '../lib/format';
 
 const OPCOES: { chave: Tema; label: string; icon: LucideIcon; desc: string }[] = [
@@ -147,6 +150,14 @@ export function Settings() {
           </div>
         </section>
 
+        {/* Senhas de colaboradores (só com backend) */}
+        {apiAtiva && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Senhas de colaboradores</h2>
+            <ResetColaborador />
+          </section>
+        )}
+
         {/* Conta e segurança */}
         <section>
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Conta e segurança</h2>
@@ -181,6 +192,85 @@ function Switch({ ativo, onToggle, rotulo }: { ativo: boolean; onToggle: () => v
   );
 }
 
+/** Atendente busca um colaborador e reseta a senha (gera temporária; força troca). */
+function ResetColaborador() {
+  const [busca, setBusca] = useState('');
+  const [lista, setLista] = useState<UsuarioApi[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [temp, setTemp] = useState<Record<string, string>>({});
+
+  async function buscar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro('');
+    setCarregando(true);
+    try {
+      setLista(await api.buscarColaboradores(busca.trim()));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Falha na busca.');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function resetar(id: string) {
+    setErro('');
+    try {
+      const r = await api.resetarSenhaColaborador(id);
+      setTemp((p) => ({ ...p, [id]: r.senhaTemporaria ?? 'definida' }));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível resetar.');
+    }
+  }
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <form onSubmit={buscar} className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+        <Search size={17} className="text-ink-dim" />
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar colaborador por nome, CPF ou matrícula"
+          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/70"
+        />
+        <button className="shrink-0 text-xs font-semibold text-brand-soft hover:underline">Buscar</button>
+      </form>
+      {erro && <p className="mt-2 text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
+      <div className="mt-1 flex flex-col divide-y divide-line">
+        {carregando && <p className="py-3 text-center text-sm text-ink-dim">Buscando…</p>}
+        {!carregando && lista.length === 0 && (
+          <p className="py-3 text-center text-sm text-ink-dim">Busque um colaborador para resetar a senha.</p>
+        )}
+        {lista.map((c) => (
+          <div key={c.id} className="flex items-center gap-3 py-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
+              {iniciais(c.nome)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-ink">{c.nome}</div>
+              <div className="text-xs text-ink-dim">
+                {c.setor ?? '—'}
+                {c.cpf ? ` · ${c.cpf}` : ''}
+              </div>
+              {temp[c.id] && (
+                <div className="mt-1 text-xs font-semibold text-[#3fcf8e]">
+                  Senha temporária: <span className="font-mono">{temp[c.id]}</span> — informe ao colaborador (ele troca no
+                  próximo acesso).
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => resetar(c.id)}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-dim transition hover:bg-surface-2">
+              <RotateCcw size={14} /> Resetar senha
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TrocarSenha() {
   const [atual, setAtual] = useState('');
   const [nova, setNova] = useState('');
@@ -188,14 +278,20 @@ function TrocarSenha() {
   const [erro, setErro] = useState('');
   const [ok, setOk] = useState(false);
 
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setOk(false);
     if (!atual || !nova || !confirma) return setErro('Preencha todos os campos.');
     if (nova.length < 6) return setErro('A nova senha deve ter ao menos 6 caracteres.');
     if (nova !== confirma) return setErro('A confirmação não confere com a nova senha.');
-    // TODO: enviar ao backend. Hoje apenas valida no front.
     setErro('');
+    if (apiAtiva) {
+      try {
+        await api.trocarMinhaSenha(atual, nova);
+      } catch (err) {
+        return setErro(err instanceof Error ? err.message : 'Não foi possível trocar a senha.');
+      }
+    }
     setOk(true);
     setAtual('');
     setNova('');

@@ -8,16 +8,31 @@ import type { Chamado } from '../data/types';
 import { useTema } from '../context/theme';
 import { iniciais } from '../lib/format';
 
+interface AtendenteOpcao {
+  id: string;
+  nome: string;
+  setor: string;
+}
+
 interface Props {
   chamado: Chamado;
   totalDoColaborador: number;
+  atendentes?: AtendenteOpcao[];
   onEnviar: (texto: string) => void;
   onDecidir: (decisao: 'APROVADO' | 'RECUSADO', motivo?: string) => void;
   onVerHistorico: () => void;
-  onTransferir: (atendente: string) => void;
+  onTransferir: (atendenteId: string, nome: string) => void;
 }
 
-export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir, onVerHistorico, onTransferir }: Props) {
+export function ConversaPane({
+  chamado,
+  totalDoColaborador,
+  atendentes,
+  onEnviar,
+  onDecidir,
+  onVerHistorico,
+  onTransferir,
+}: Props) {
   const { esquema } = useTema();
   const colaborador = colaboradorPorId(chamado.colaboradorId);
   const cat = CATEGORIAS[chamado.categoria];
@@ -55,13 +70,17 @@ export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir,
     setBuscaAtendente('');
   }, [chamado.id]);
 
+  const listaAtendentes = atendentes ?? ATENDENTES;
   const termoAtendente = buscaAtendente.trim().toLowerCase();
-  const atendentesFiltrados = ATENDENTES.filter(
-    (a) => a.nome !== chamado.atendente && a.nome.toLowerCase().includes(termoAtendente),
+  const atendentesFiltrados = listaAtendentes.filter(
+    (a) =>
+      a.id !== chamado.atendenteId &&
+      a.nome !== chamado.atendente &&
+      a.nome.toLowerCase().includes(termoAtendente),
   );
 
-  function transferir(nome: string) {
-    onTransferir(nome);
+  function transferir(a: AtendenteOpcao) {
+    onTransferir(a.id, a.nome);
     setTransferindo(false);
     setBuscaAtendente('');
   }
@@ -135,7 +154,7 @@ export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir,
                     atendentesFiltrados.map((a) => (
                       <button
                         key={a.id}
-                        onClick={() => transferir(a.nome)}
+                        onClick={() => transferir(a)}
                         className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-surface-2">
                         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
                           {iniciais(a.nome)}

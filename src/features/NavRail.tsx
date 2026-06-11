@@ -14,6 +14,7 @@ import {
 import { Logo } from '../components/Logo';
 import { useAuth, type Papel } from '../context/auth';
 import { ATENDENTES } from '../data/mock';
+import { apiAtiva } from '../lib/api';
 import { iniciais } from '../lib/format';
 
 export type Aba = 'atendimentos' | 'historico' | 'relatorios' | 'config';
@@ -62,9 +63,15 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
         {/* Identidade do atendente + troca rápida (demo do modelo de filas) */}
         <div className="relative" ref={ref}>
           <button
-            onClick={() => setTrocando((v) => !v)}
-            title={`${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'} · trocar`}
-            className="mt-1 grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft ring-2 ring-transparent transition hover:ring-gold/60">
+            onClick={() => !apiAtiva && setTrocando((v) => !v)}
+            title={
+              apiAtiva
+                ? `${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'}`
+                : `${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'} · trocar`
+            }
+            className={`mt-1 grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft ring-2 ring-transparent transition ${
+              apiAtiva ? 'cursor-default' : 'hover:ring-gold/60'
+            }`}>
             {iniciais(gestor?.nome ?? 'Atendente')}
             <span
               className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full border-2 border-navy"
@@ -73,7 +80,7 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
             </span>
           </button>
 
-          {trocando && (
+          {!apiAtiva && trocando && (
             <div className="glass-strong absolute bottom-0 left-full z-30 ml-3 w-64 animate-fade-in overflow-hidden rounded-xl border border-line shadow-xl">
               <div className="border-b border-line px-3 py-2 text-xs font-semibold text-ink-dim">
                 Entrar como atendente (demo)
