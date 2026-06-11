@@ -56,5 +56,7 @@ export interface Chamado {
   /** atendente responsável (gestor) */
   atendente?: string;
   motivoRecusa?: string;
+  /** mensagens do colaborador ainda não lidas pelo gestor */
+  naoLidas?: number;
   mensagens: Mensagem[];
 }

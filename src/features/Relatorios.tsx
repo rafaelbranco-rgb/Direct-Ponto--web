@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
+  Download,
   Inbox,
   MessageSquare,
+  Printer,
   ThumbsUp,
   XCircle,
   type LucideIcon,
@@ -13,6 +15,7 @@ import { CATEGORIAS, STATUS_UI } from '../data/catalog';
 import { colaboradorPorId } from '../data/mock';
 import type { CategoriaCodigo, Chamado, StatusChamado } from '../data/types';
 import { useTema } from '../context/theme';
+import { exportarChamadosCSV, exportarRelatorioPDF } from '../lib/export';
 import { iniciais } from '../lib/format';
 
 type Periodo = 7 | 30 | 90 | 0;
@@ -71,10 +74,34 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
     }
     const setores = [...porSetor.entries()].map(([setor, n]) => ({ setor, n })).sort((a, b) => b.n - a.n);
 
-    return { total, aprovados, recusados, resolvidos, emAberto, taxa, categorias, status, atendentes, setores };
+    return { base, total, aprovados, recusados, resolvidos, emAberto, taxa, categorias, status, atendentes, setores };
   }, [chamados, periodo]);
 
   const vazio = dados.total === 0;
+  const periodoLabel = PERIODOS.find((p) => p.dias === periodo)!.label;
+  const sufixo = periodo ? `${periodo}d` : 'tudo';
+
+  function exportarCSV() {
+    exportarChamadosCSV(dados.base, sufixo);
+  }
+
+  function exportarPDF() {
+    exportarRelatorioPDF({
+      periodoLabel,
+      kpis: [
+        { label: 'Total de chamados', valor: dados.total },
+        { label: 'Em aberto', valor: dados.emAberto },
+        { label: 'Aprovados', valor: dados.aprovados },
+        { label: 'Taxa de aprovação', valor: `${dados.taxa}%` },
+      ],
+      secoes: [
+        { titulo: 'Por tipo de ocorrência', itens: dados.categorias.map((c) => ({ label: c.label, n: c.n })) },
+        { titulo: 'Por status', itens: dados.status.map((s) => ({ label: s.label, n: s.n })) },
+        { titulo: 'Por atendente', itens: dados.atendentes.map((a) => ({ label: a.nome, n: a.n })) },
+        { titulo: 'Por setor', itens: dados.setores.map((s) => ({ label: s.setor, n: s.n })) },
+      ],
+    });
+  }
 
   return (
     <section className="flex min-h-0 flex-1 animate-fade-in flex-col">
@@ -84,17 +111,33 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
           <h1 className="text-xl font-bold text-ink">Relatórios</h1>
           <p className="text-xs text-ink-dim">Visão geral das justificativas de ponto</p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-line bg-surface/60 p-1">
-          {PERIODOS.map((p) => (
-            <button
-              key={p.dias}
-              onClick={() => setPeriodo(p.dias)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                periodo === p.dias ? 'bg-brand text-white' : 'text-ink-dim hover:bg-surface-2'
-              }`}>
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-xl border border-line bg-surface/60 p-1">
+            {PERIODOS.map((p) => (
+              <button
+                key={p.dias}
+                onClick={() => setPeriodo(p.dias)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  periodo === p.dias ? 'bg-brand text-white' : 'text-ink-dim hover:bg-surface-2'
+                }`}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={exportarCSV}
+            disabled={vazio}
+            title="Exportar CSV"
+            className="flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-xs font-semibold text-ink-dim transition hover:bg-surface-2 disabled:opacity-40">
+            <Download size={15} /> CSV
+          </button>
+          <button
+            onClick={exportarPDF}
+            disabled={vazio}
+            title="Exportar PDF / Imprimir"
+            className="flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-40">
+            <Printer size={15} /> PDF
+          </button>
         </div>
       </header>
 

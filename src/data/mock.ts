@@ -35,6 +35,7 @@ export const CHAMADOS: Chamado[] = [
     horarioProposto: '08:00',
     descricao: 'Trânsito intenso na Av. Principal por conta de acidente.',
     criadoEm: '2026-06-09T10:08:00Z',
+    naoLidas: 2,
     mensagens: [
       { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164859 — Atendimento solicitado', data: '09/06/2026 às 10:08h' },
       { id: 'm2', autor: 'COLABORADOR', texto: 'Bom dia', horario: '10:08' },
@@ -69,6 +70,7 @@ export const CHAMADOS: Chamado[] = [
     descricao: 'Esqueci de registrar a saída ao fim do expediente.',
     criadoEm: '2026-06-06T19:00:00Z',
     atendente: 'Eliza (Gestor)',
+    naoLidas: 1,
     mensagens: [
       { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164712 — Atendimento solicitado', data: '06/06/2026 às 19:00h' },
       { id: 'm2', autor: 'COLABORADOR', texto: 'Esqueci de bater o ponto na saída ontem, saí 17:48.', horario: '19:00' },
@@ -125,6 +127,7 @@ export const CHAMADOS: Chamado[] = [
     horarioProposto: '17:00',
     descricao: 'Saída antecipada autorizada verbalmente pela supervisão.',
     criadoEm: '2026-06-09T16:30:00Z',
+    naoLidas: 1,
     mensagens: [
       { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164888 — Atendimento solicitado', data: '09/06/2026 às 16:30h' },
       { id: 'm2', autor: 'COLABORADOR', texto: 'Saí 16:10 com autorização do supervisor.', horario: '16:30' },

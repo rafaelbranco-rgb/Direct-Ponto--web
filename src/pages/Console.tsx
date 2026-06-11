@@ -59,6 +59,12 @@ export function Console() {
     setChamados((prev) => prev.map((c) => (c.id === id ? fn(c) : c)));
   }
 
+  /** Abre um chamado e zera o contador de mensagens não lidas. */
+  function selecionar(id: string) {
+    setSelId(id);
+    atualizar(id, (c) => (c.naoLidas ? { ...c, naoLidas: 0 } : c));
+  }
+
   /** Puxa um chamado em espera para atendimento e abre a conversa. */
   function atender(c: Chamado) {
     const nome = gestor?.nome ?? 'Gestor';
@@ -66,6 +72,7 @@ export function Console() {
       ...ch,
       status: 'EM_ATENDIMENTO',
       atendente: ch.atendente ?? nome,
+      naoLidas: 0,
       mensagens: [
         ...ch.mensagens,
         {
@@ -192,7 +199,7 @@ export function Console() {
                     c={c}
                     ativo={c.id === selId}
                     esquema={esquema}
-                    onClick={() => setSelId(c.id)}
+                    onClick={() => selecionar(c.id)}
                   />
                 ))
               )
@@ -208,7 +215,7 @@ export function Console() {
                       c={c}
                       ativo={c.id === selId}
                       esquema={esquema}
-                      onClick={() => setSelId(c.id)}
+                      onClick={() => selecionar(c.id)}
                     />
                   ))
                 )}
@@ -229,8 +236,11 @@ export function Console() {
                         className={`flex items-start justify-between gap-2 border-b border-line/60 px-4 py-3 transition ${
                           c.id === selId ? 'bg-surface-2' : 'hover:bg-surface/60'
                         }`}>
-                        <button onClick={() => setSelId(c.id)} className="min-w-0 flex-1 text-left">
-                          <div className="truncate text-sm font-semibold text-ink">{colab?.nome}</div>
+                        <button onClick={() => selecionar(c.id)} className="min-w-0 flex-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate text-sm font-semibold text-ink">{colab?.nome}</span>
+                            {!!c.naoLidas && <Badge n={c.naoLidas} />}
+                          </div>
                           <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-dim">
                             <cat.icon size={13} className="shrink-0 text-gold" />
                             <span className="truncate">Assunto: {cat.label}</span>
@@ -302,6 +312,11 @@ function CardAtendimento({
           className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-navy"
           style={{ background: st.dot }}
         />
+        {!!c.naoLidas && (
+          <span className="absolute -right-1.5 -top-1.5">
+            <Badge n={c.naoLidas} />
+          </span>
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
@@ -317,6 +332,15 @@ function CardAtendimento({
         </div>
       </div>
     </button>
+  );
+}
+
+/** Contador de mensagens não lidas (estilo Nexti, laranja). */
+function Badge({ n }: { n: number }) {
+  return (
+    <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gold px-1 text-[11px] font-bold leading-none text-navy">
+      {n > 9 ? '9+' : n}
+    </span>
   );
 }
 
