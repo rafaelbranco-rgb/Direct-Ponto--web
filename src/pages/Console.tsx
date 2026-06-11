@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MessageSquare, Search, Inbox } from 'lucide-react';
 
 import { ConversaPane } from '../features/ConversaPane';
@@ -32,6 +32,15 @@ export function Console() {
 
   const selecionado = chamados.find((c) => c.id === selId) ?? null;
 
+  // Supervisor/RH vê tudo; atendente vê apenas os chamados atribuídos a ele.
+  const supervisor = gestor?.papel === 'supervisor';
+  const meu = (c: Chamado) => supervisor || c.atendente === gestor?.nome;
+
+  // Relatórios é exclusivo do supervisor/RH: ao rebaixar o papel, sai da aba.
+  useEffect(() => {
+    if (aba === 'relatorios' && !supervisor) setAba('atendimentos');
+  }, [aba, supervisor]);
+
   const { emAtendimento, emEspera, encerrados } = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     const passa = (c: Chamado) => {
@@ -42,18 +51,21 @@ export function Console() {
     };
     const filtrados = chamados.filter(passa);
     return {
+      // Em atendimento: só os meus (ou todos, se supervisor).
       emAtendimento: filtrados
-        .filter((c) => c.status === 'EM_ATENDIMENTO')
+        .filter((c) => c.status === 'EM_ATENDIMENTO' && meu(c))
         .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)),
-      // Em espera: mais antigos (espera mais longa) primeiro, como no Nexti.
+      // Em espera: fila compartilhada — todos veem e podem puxar. Mais antigos primeiro.
       emEspera: filtrados
         .filter((c) => c.status === 'PENDENTE')
         .sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)),
+      // Encerrados: só os meus (ou todos, se supervisor).
       encerrados: filtrados
-        .filter((c) => c.status === 'APROVADO' || c.status === 'RECUSADO')
+        .filter((c) => (c.status === 'APROVADO' || c.status === 'RECUSADO') && meu(c))
         .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)),
     };
-  }, [chamados, busca, colabFiltro]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chamados, busca, colabFiltro, supervisor, gestor?.nome]);
 
   function atualizar(id: string, fn: (c: Chamado) => Chamado) {
     setChamados((prev) => prev.map((c) => (c.id === id ? fn(c) : c)));
@@ -154,9 +166,12 @@ export function Console() {
         <aside className="glass flex w-[360px] shrink-0 flex-col border-r border-line">
           {/* Cabeçalho: Em atendimento (N) · Encerrados */}
           <div className="flex items-center justify-between border-b border-line px-4 pb-2.5 pt-3">
-            <h2 className="text-[15px] font-bold text-ink">
+            <h2 className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
               {verEncerrados ? 'Encerrados' : 'Em atendimento'}{' '}
               <span className="text-ink-dim">({verEncerrados ? encerrados.length : emAtendimento.length})</span>
+              <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-dim">
+                {supervisor ? 'todos' : 'meus'}
+              </span>
             </h2>
             <button
               onClick={() => setVerEncerrados((v) => !v)}

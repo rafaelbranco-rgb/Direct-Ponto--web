@@ -4,6 +4,7 @@ import { ArrowRight, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
+import { ATENDENTES } from '../data/mock';
 
 export function Login() {
   const navigate = useNavigate();
@@ -19,8 +20,9 @@ export function Login() {
       setErro('Informe seu CPF/matrícula e a senha.');
       return;
     }
-    // TODO: autenticar no backend (perfil gestor). Hoje aceita qualquer valor.
-    entrar({ nome: 'Gestor', identificador: identificador.trim() });
+    // TODO: autenticar no backend (contas criadas no sistema). Hoje entra como um atendente de demonstração.
+    const demo = ATENDENTES.find((a) => a.papel === 'atendente') ?? ATENDENTES[0];
+    entrar({ nome: demo.nome, identificador: identificador.trim(), papel: demo.papel });
     navigate('/');
   }
 

@@ -12,15 +12,15 @@ export function colaboradorPorId(id: string) {
   return COLABORADORES.find((c) => c.id === id);
 }
 
-/** Atendentes (gestores) disponíveis para receber transferências de chamados. */
-export const ATENDENTES: { id: string; nome: string; setor: string }[] = [
-  { id: 'a1', nome: 'Eliza (Gestor)', setor: 'RH' },
-  { id: 'a2', nome: 'Miguel (Gestor)', setor: 'RH' },
-  { id: 'a3', nome: 'Patrícia Gomes', setor: 'Departamento Pessoal' },
-  { id: 'a4', nome: 'Rodrigo Antunes', setor: 'Departamento Pessoal' },
-  { id: 'a5', nome: 'Fernanda Castro', setor: 'Operações' },
-  { id: 'a6', nome: 'Bruno Carvalho', setor: 'Operações' },
-  { id: 'a7', nome: 'Juliana Mendes', setor: 'RH' },
+/** Atendentes do console. `supervisor` vê tudo + relatórios; `atendente` atende a própria fila. */
+export const ATENDENTES: { id: string; nome: string; setor: string; papel: 'atendente' | 'supervisor' }[] = [
+  { id: 'a1', nome: 'Eliza (Gestor)', setor: 'RH', papel: 'supervisor' },
+  { id: 'a2', nome: 'Miguel (Gestor)', setor: 'RH', papel: 'atendente' },
+  { id: 'a3', nome: 'Patrícia Gomes', setor: 'Departamento Pessoal', papel: 'atendente' },
+  { id: 'a4', nome: 'Rodrigo Antunes', setor: 'Departamento Pessoal', papel: 'atendente' },
+  { id: 'a5', nome: 'Fernanda Castro', setor: 'Operações', papel: 'atendente' },
+  { id: 'a6', nome: 'Bruno Carvalho', setor: 'Operações', papel: 'atendente' },
+  { id: 'a7', nome: 'Juliana Mendes', setor: 'RH', papel: 'supervisor' },
 ];
 
 export const CHAMADOS: Chamado[] = [
@@ -69,12 +69,12 @@ export const CHAMADOS: Chamado[] = [
     horarioProposto: '17:48',
     descricao: 'Esqueci de registrar a saída ao fim do expediente.',
     criadoEm: '2026-06-06T19:00:00Z',
-    atendente: 'Eliza (Gestor)',
+    atendente: 'Miguel (Gestor)',
     naoLidas: 1,
     mensagens: [
       { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164712 — Atendimento solicitado', data: '06/06/2026 às 19:00h' },
       { id: 'm2', autor: 'COLABORADOR', texto: 'Esqueci de bater o ponto na saída ontem, saí 17:48.', horario: '19:00' },
-      { id: 'm3', autor: 'SISTEMA', texto: 'Protocolo 11164712 — Atendimento iniciado por ELIZA', data: '08/06/2026 às 09:12h' },
+      { id: 'm3', autor: 'SISTEMA', texto: 'Protocolo 11164712 — Atendimento iniciado por MIGUEL', data: '08/06/2026 às 09:12h' },
       { id: 'm4', autor: 'ATENDENTE', texto: 'Bom dia! Verifiquei no Nexti, consta a entrada mas não a saída. Pode confirmar o horário?', horario: '09:12' },
       { id: 'm5', autor: 'COLABORADOR', texto: 'Confirmo, 17:48.', horario: '09:30' },
     ],
@@ -131,6 +131,26 @@ export const CHAMADOS: Chamado[] = [
     mensagens: [
       { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164888 — Atendimento solicitado', data: '09/06/2026 às 16:30h' },
       { id: 'm2', autor: 'COLABORADOR', texto: 'Saí 16:10 com autorização do supervisor.', horario: '16:30' },
+    ],
+  },
+  {
+    id: 'ch7',
+    protocolo: '11164903',
+    colaboradorId: 'c2',
+    categoria: 'ATESTADO',
+    status: 'EM_ATENDIMENTO',
+    dataOcorrencia: '2026-06-08',
+    descricao: 'Atestado de acompanhamento (consulta de dependente).',
+    temAnexo: true,
+    criadoEm: '2026-06-08T11:15:00Z',
+    atendente: 'Patrícia Gomes',
+    naoLidas: 2,
+    mensagens: [
+      { id: 'm1', autor: 'SISTEMA', texto: 'Protocolo 11164903 — Atendimento solicitado', data: '08/06/2026 às 11:15h' },
+      { id: 'm2', autor: 'COLABORADOR', texto: 'Levei meu filho ao médico, segue o atestado de acompanhamento.', horario: '11:15' },
+      { id: 'm3', autor: 'COLABORADOR', texto: '', horario: '11:16', anexo: { nome: 'atestado-acomp.pdf', ehImagem: false } },
+      { id: 'm4', autor: 'SISTEMA', texto: 'Protocolo 11164903 — Atendimento iniciado por PATRÍCIA', data: '08/06/2026 às 14:02h' },
+      { id: 'm5', autor: 'COLABORADOR', texto: 'Bom dia, conseguem analisar hoje?', horario: '08:30' },
     ],
   },
 ];

@@ -1,9 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
+export type Papel = 'atendente' | 'supervisor';
+
 export interface Gestor {
   nome: string;
   identificador: string;
+  /** atendente: atende a sua própria fila · supervisor/RH: vê tudo + relatórios */
+  papel: Papel;
 }
 
 interface AuthValue {
