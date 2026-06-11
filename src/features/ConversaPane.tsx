@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Paperclip, Send, ThumbsDown, ThumbsUp, History } from 'lucide-react';
+import { Paperclip, Send, ThumbsDown, ThumbsUp, History, ArrowLeftRight, Search, Check } from 'lucide-react';
 
 import { MensagemBolha } from './MensagemBolha';
 import { CATEGORIAS, statusCor } from '../data/catalog';
-import { colaboradorPorId } from '../data/mock';
+import { ATENDENTES, colaboradorPorId } from '../data/mock';
 import type { Chamado } from '../data/types';
 import { useTema } from '../context/theme';
 import { iniciais } from '../lib/format';
@@ -14,9 +14,10 @@ interface Props {
   onEnviar: (texto: string) => void;
   onDecidir: (decisao: 'APROVADO' | 'RECUSADO', motivo?: string) => void;
   onVerHistorico: () => void;
+  onTransferir: (atendente: string) => void;
 }
 
-export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir, onVerHistorico }: Props) {
+export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir, onVerHistorico, onTransferir }: Props) {
   const { esquema } = useTema();
   const colaborador = colaboradorPorId(chamado.colaboradorId);
   const cat = CATEGORIAS[chamado.categoria];
@@ -27,11 +28,43 @@ export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir,
   const [texto, setTexto] = useState('');
   const [recusando, setRecusando] = useState(false);
   const [motivo, setMotivo] = useState('');
+  const [transferindo, setTransferindo] = useState(false);
+  const [buscaAtendente, setBuscaAtendente] = useState('');
   const fimRef = useRef<HTMLDivElement>(null);
+  const transferRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chamado.id, chamado.mensagens.length]);
+
+  // Fecha o painel de transferência ao clicar fora.
+  useEffect(() => {
+    if (!transferindo) return;
+    function fora(e: MouseEvent) {
+      if (transferRef.current && !transferRef.current.contains(e.target as Node)) {
+        setTransferindo(false);
+      }
+    }
+    document.addEventListener('mousedown', fora);
+    return () => document.removeEventListener('mousedown', fora);
+  }, [transferindo]);
+
+  // Reinicia o estado do painel ao trocar de chamado.
+  useEffect(() => {
+    setTransferindo(false);
+    setBuscaAtendente('');
+  }, [chamado.id]);
+
+  const termoAtendente = buscaAtendente.trim().toLowerCase();
+  const atendentesFiltrados = ATENDENTES.filter(
+    (a) => a.nome !== chamado.atendente && a.nome.toLowerCase().includes(termoAtendente),
+  );
+
+  function transferir(nome: string) {
+    onTransferir(nome);
+    setTransferindo(false);
+    setBuscaAtendente('');
+  }
 
   function enviar() {
     const t = texto.trim();
@@ -65,6 +98,65 @@ export function ConversaPane({ chamado, totalDoColaborador, onEnviar, onDecidir,
           className="flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-dim transition hover:bg-surface-2">
           <History size={15} /> {totalDoColaborador} chamado{totalDoColaborador > 1 ? 's' : ''}
         </button>
+
+        {/* Transferir chamado para outro atendente */}
+        {!resolvido && (
+          <div className="relative" ref={transferRef}>
+            <button
+              onClick={() => setTransferindo((v) => !v)}
+              title="Transferir chamado para outro atendente"
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
+                transferindo
+                  ? 'border-brand bg-brand/15 text-brand-soft'
+                  : 'border-line text-ink-dim hover:bg-surface-2'
+              }`}>
+              <ArrowLeftRight size={15} /> Transferir
+            </button>
+
+            {transferindo && (
+              <div className="glass-strong absolute right-0 top-full z-20 mt-2 w-72 animate-fade-in overflow-hidden rounded-xl border border-line shadow-xl">
+                <div className="border-b border-line px-3 py-2">
+                  <p className="mb-2 text-xs font-semibold text-ink-dim">Transferir atendimento para…</p>
+                  <div className="flex items-center gap-2 rounded-lg border border-line bg-surface/60 px-2.5 py-1.5">
+                    <Search size={15} className="text-ink-dim" />
+                    <input
+                      autoFocus
+                      value={buscaAtendente}
+                      onChange={(e) => setBuscaAtendente(e.target.value)}
+                      placeholder="Buscar atendente por nome"
+                      className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/70"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1">
+                  {atendentesFiltrados.length === 0 ? (
+                    <p className="px-3 py-4 text-center text-xs text-ink-dim">Nenhum atendente encontrado.</p>
+                  ) : (
+                    atendentesFiltrados.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => transferir(a.nome)}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-surface-2">
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
+                          {iniciais(a.nome)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-ink">{a.nome}</div>
+                          <div className="truncate text-xs text-ink-dim">{a.setor}</div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+                {chamado.atendente && (
+                  <div className="flex items-center gap-1.5 border-t border-line px-3 py-2 text-xs text-ink-dim">
+                    <Check size={13} className="text-gold" /> Responsável atual: {chamado.atendente}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <span
           className="rounded-full px-3 py-1 text-xs font-bold"

@@ -89,6 +89,20 @@ export function Console() {
     }));
   }
 
+  function transferir(atendente: string) {
+    if (!selecionado) return;
+    const anterior = selecionado.atendente;
+    const txt = anterior
+      ? `Protocolo ${selecionado.protocolo} — Atendimento transferido de ${anterior} para ${atendente}`
+      : `Protocolo ${selecionado.protocolo} — Atendimento atribuído a ${atendente}`;
+    atualizar(selecionado.id, (c) => ({
+      ...c,
+      status: c.status === 'PENDENTE' ? 'EM_ATENDIMENTO' : c.status,
+      atendente,
+      mensagens: [...c.mensagens, { id: `t-${Date.now()}`, autor: 'SISTEMA', texto: txt, data: `Hoje às ${horaAgora()}h` }],
+    }));
+  }
+
   const totalDoColaborador = selecionado
     ? chamados.filter((c) => c.colaboradorId === selecionado.colaboradorId).length
     : 0;
@@ -200,6 +214,7 @@ export function Console() {
             onEnviar={enviar}
             onDecidir={decidir}
             onVerHistorico={() => setColabFiltro(selecionado.colaboradorId)}
+            onTransferir={transferir}
           />
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ink-dim">

@@ -12,6 +12,17 @@ export function colaboradorPorId(id: string) {
   return COLABORADORES.find((c) => c.id === id);
 }
 
+/** Atendentes (gestores) disponíveis para receber transferências de chamados. */
+export const ATENDENTES: { id: string; nome: string; setor: string }[] = [
+  { id: 'a1', nome: 'Eliza (Gestor)', setor: 'RH' },
+  { id: 'a2', nome: 'Miguel (Gestor)', setor: 'RH' },
+  { id: 'a3', nome: 'Patrícia Gomes', setor: 'Departamento Pessoal' },
+  { id: 'a4', nome: 'Rodrigo Antunes', setor: 'Departamento Pessoal' },
+  { id: 'a5', nome: 'Fernanda Castro', setor: 'Operações' },
+  { id: 'a6', nome: 'Bruno Carvalho', setor: 'Operações' },
+  { id: 'a7', nome: 'Juliana Mendes', setor: 'RH' },
+];
+
 export const CHAMADOS: Chamado[] = [
   {
     id: 'ch1',
