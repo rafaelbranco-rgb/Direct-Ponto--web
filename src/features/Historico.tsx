@@ -13,7 +13,7 @@ import {
 
 import { MensagemBolha } from './MensagemBolha';
 import { CATEGORIAS, statusCor } from '../data/catalog';
-import { COLABORADORES, colaboradorPorId } from '../data/mock';
+import { colaboradorPorId } from '../data/mock';
 import type { Chamado, StatusChamado } from '../data/types';
 import { useTema } from '../context/theme';
 import { dataBR, diaMes, iniciais } from '../lib/format';
@@ -39,12 +39,22 @@ export function Historico({ chamados }: { chamados: Chamado[] }) {
 
   const colaboradores = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    return COLABORADORES.filter((c) => porColaborador.has(c.id)).filter((c) => {
-      if (!termo) return true;
+    const termoNum = termo.replace(/\D/g, '');
+    // Monta a lista a partir dos CHAMADOS reais (resolve o colaborador registrado),
+    // não do array mock — assim funciona com os IDs vindos do backend.
+    const lista = Array.from(porColaborador.keys())
+      .flatMap((id) => {
+        const c = colaboradorPorId(id);
+        return c ? [c] : [];
+      })
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+    if (!termo) return lista;
+    return lista.filter((c) => {
+      const cpfNum = (c.cpf ?? '').replace(/\D/g, '');
       return (
         c.nome.toLowerCase().includes(termo) ||
-        c.matricula.includes(termo) ||
-        c.cpf.replace(/\D/g, '').includes(termo.replace(/\D/g, ''))
+        (c.matricula ?? '').toLowerCase().includes(termo) ||
+        (termoNum.length > 0 && cpfNum.includes(termoNum))
       );
     });
   }, [busca, porColaborador]);
