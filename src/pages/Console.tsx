@@ -198,8 +198,8 @@ export function Console() {
         await api.decidir(selecionado.id, decisao, motivo);
         await carregar();
         await abrirDetalhe(selecionado.id);
-      } catch {
-        /* ignora */
+      } catch (e) {
+        alert(e instanceof Error ? e.message : 'Não foi possível registrar a decisão.');
       }
       return;
     }
