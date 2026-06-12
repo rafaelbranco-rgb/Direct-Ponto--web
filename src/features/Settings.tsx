@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  ArrowLeftRight,
   Bell,
   Check,
   Inbox,
@@ -14,6 +15,7 @@ import {
   Shield,
   Sun,
   UserCog,
+  UserPlus,
   Volume2,
   type LucideIcon,
 } from 'lucide-react';
@@ -158,10 +160,23 @@ export function Settings() {
           </section>
         )}
 
+        {/* Usuários do sistema (só supervisor, com backend) */}
+        {apiAtiva && supervisor && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Usuários do sistema</h2>
+            <CriarUsuario />
+          </section>
+        )}
+
         {/* Conta e segurança */}
         <section>
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Conta e segurança</h2>
           <TrocarSenha />
+          <button
+            onClick={sair}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 font-semibold text-white transition hover:brightness-110">
+            <ArrowLeftRight size={18} /> Trocar de usuário
+          </button>
           <button
             onClick={sair}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#e05a50]/50 py-3 font-semibold text-[#ff9c8e] transition hover:bg-[rgba(224,90,80,0.12)]">
@@ -332,6 +347,96 @@ function TrocarSenha() {
         type="submit"
         className="mt-3 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110">
         Salvar nova senha
+      </button>
+    </form>
+  );
+}
+
+/** Supervisor cria um novo usuário do painel (atendente ou supervisor). */
+function CriarUsuario() {
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [papel, setPapel] = useState<'ATENDENTE' | 'SUPERVISOR'>('ATENDENTE');
+  const [erro, setErro] = useState('');
+  const [ok, setOk] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  async function criar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro('');
+    setOk('');
+    if (!nome.trim() || !email.trim()) return setErro('Preencha o nome e o e-mail.');
+    if (senha.length < 6) return setErro('A senha deve ter ao menos 6 caracteres.');
+    setEnviando(true);
+    try {
+      const u = await api.criarAtendente({
+        nome: nome.trim(),
+        email: email.trim().toLowerCase(),
+        senha,
+        papel,
+      });
+      setOk(`Usuário "${u.nome}" criado como ${papel === 'SUPERVISOR' ? 'Supervisor' : 'Atendente'}.`);
+      setNome('');
+      setEmail('');
+      setSenha('');
+      setPapel('ATENDENTE');
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível criar o usuário.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <form onSubmit={criar} className="glass rounded-2xl p-4">
+      <div className="mb-3 flex items-center gap-2 text-ink">
+        <UserPlus size={18} className="text-brand-soft" />
+        <span className="font-semibold">Criar usuário</span>
+      </div>
+      <p className="mb-3 text-xs text-ink-dim">
+        O usuário entra no painel com o e-mail e a senha definidos aqui (pode trocar a senha depois).
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Nome"
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-dim/70 focus:border-brand"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="E-mail"
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-dim/70 focus:border-brand"
+        />
+        <CampoSenha valor={senha} onChange={setSenha} placeholder="Senha (mín. 6)" />
+        <div className="flex rounded-xl border border-line bg-surface p-1">
+          {(['ATENDENTE', 'SUPERVISOR'] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPapel(p)}
+              className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
+                papel === p ? 'bg-brand text-white' : 'text-ink-dim hover:text-ink'
+              }`}>
+              {p === 'ATENDENTE' ? 'Atendente' : 'Supervisor / RH'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {erro && <p className="mt-2 text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
+      {ok && (
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[#3fcf8e]">
+          <Check size={15} /> {ok}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={enviando}
+        className="mt-3 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
+        {enviando ? 'Criando…' : 'Criar usuário'}
       </button>
     </form>
   );

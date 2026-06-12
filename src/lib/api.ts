@@ -126,6 +126,8 @@ export const api = {
     req<ChamadoApi>('POST', `/chamados/${id}/transferir`, { atendenteId }),
 
   listarAtendentes: () => req<UsuarioApi[]>('GET', '/usuarios/atendentes'),
+  criarAtendente: (dados: { nome: string; email: string; senha: string; papel: 'ATENDENTE' | 'SUPERVISOR' }) =>
+    req<UsuarioApi>('POST', '/usuarios/atendentes', dados),
   buscarColaboradores: (busca: string) =>
     req<UsuarioApi[]>('GET', `/usuarios/colaboradores?busca=${encodeURIComponent(busca)}`),
   resetarSenhaColaborador: (id: string, novaSenha?: string) =>
