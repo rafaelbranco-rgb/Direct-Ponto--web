@@ -6,6 +6,7 @@ import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
 import { ATENDENTES } from '../data/mock';
 import { apiAtiva } from '../lib/api';
+import { pedirPermissaoNotif } from '../lib/notificacoes';
 
 export function Login() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export function Login() {
       setErro('');
       try {
         await entrarApi(identificador.trim(), senha);
+        pedirPermissaoNotif();
         navigate('/');
       } catch (err) {
         setErro(err instanceof Error ? err.message : 'Não foi possível entrar.');

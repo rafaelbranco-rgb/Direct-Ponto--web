@@ -93,7 +93,14 @@ export function Console() {
     try {
       const f = await api.listarChamados();
       const todos = [...f.emEspera, ...f.emAtendimento, ...f.encerrados].map(adaptarChamado);
-      setChamados(todos);
+      // A lista NÃO traz as mensagens (só o detalhe traz). Preserva as mensagens
+      // já carregadas para não "apagar" a conversa aberta ao recarregar a fila.
+      setChamados((prev) => {
+        const msgsAnteriores = new Map(prev.map((c) => [c.id, c.mensagens]));
+        return todos.map((c) =>
+          c.mensagens.length ? c : { ...c, mensagens: msgsAnteriores.get(c.id) ?? c.mensagens },
+        );
+      });
     } catch {
       /* mantém o que já está na tela */
     }

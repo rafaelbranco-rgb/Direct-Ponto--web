@@ -39,7 +39,7 @@ export function MensagemBolha({ m, anterior }: { m: Mensagem; anterior?: Mensage
               <FileText size={20} /> <span className="text-[15px] font-semibold">{m.anexo.nome}</span>
             </div>
           ))}
-        {m.texto && <p className="text-[16.5px] leading-relaxed">{m.texto}</p>}
+        {m.texto && <p className="whitespace-pre-line text-[16.5px] leading-relaxed">{m.texto}</p>}
         <div className={`mt-0.5 flex items-center justify-end gap-1 text-xs ${ehAtendente ? 'text-white/75' : 'text-ink-dim'}`}>
           {m.horario}
           {ehAtendente && <Check size={14} className="text-[#8be9c0]" />}
