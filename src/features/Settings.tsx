@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Bell,
   Check,
@@ -200,18 +200,28 @@ function ResetColaborador() {
   const [erro, setErro] = useState('');
   const [temp, setTemp] = useState<Record<string, string>>({});
 
-  async function buscar(e: React.FormEvent) {
-    e.preventDefault();
-    setErro('');
-    setCarregando(true);
-    try {
-      setLista(await api.buscarColaboradores(busca.trim()));
-    } catch (err) {
-      setErro(err instanceof Error ? err.message : 'Falha na busca.');
-    } finally {
+  // Busca ao vivo: conforme digita (com pequeno atraso), sem clicar em "Buscar".
+  useEffect(() => {
+    const termo = busca.trim();
+    if (termo.length < 2) {
+      setLista([]);
+      setErro('');
       setCarregando(false);
+      return;
     }
-  }
+    setCarregando(true);
+    const t = setTimeout(async () => {
+      try {
+        setLista(await api.buscarColaboradores(termo));
+        setErro('');
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : 'Falha na busca.');
+      } finally {
+        setCarregando(false);
+      }
+    }, 280);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   async function resetar(id: string) {
     setErro('');
@@ -225,21 +235,24 @@ function ResetColaborador() {
 
   return (
     <div className="glass rounded-2xl p-4">
-      <form onSubmit={buscar} className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
         <Search size={17} className="text-ink-dim" />
         <input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar colaborador por nome, CPF ou matrícula"
+          placeholder="Digite o nome, CPF ou matrícula"
           className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/70"
         />
-        <button className="shrink-0 text-xs font-semibold text-brand-soft hover:underline">Buscar</button>
-      </form>
+        {carregando && <span className="shrink-0 text-xs text-ink-dim">Buscando…</span>}
+      </div>
       {erro && <p className="mt-2 text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
       <div className="mt-1 flex flex-col divide-y divide-line">
-        {carregando && <p className="py-3 text-center text-sm text-ink-dim">Buscando…</p>}
         {!carregando && lista.length === 0 && (
-          <p className="py-3 text-center text-sm text-ink-dim">Busque um colaborador para resetar a senha.</p>
+          <p className="py-3 text-center text-sm text-ink-dim">
+            {busca.trim().length < 2
+              ? 'Digite o nome, CPF ou matrícula para buscar.'
+              : 'Nenhum colaborador encontrado.'}
+          </p>
         )}
         {lista.map((c) => (
           <div key={c.id} className="flex items-center gap-3 py-3">
