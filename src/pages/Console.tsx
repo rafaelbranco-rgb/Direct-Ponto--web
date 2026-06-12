@@ -14,6 +14,7 @@ import type { Chamado } from '../data/types';
 import { useAuth } from '../context/auth';
 import { useTema } from '../context/theme';
 import { api, apiAtiva, conectarSocket, desconectarSocket } from '../lib/api';
+import { pedirPermissaoNotif, tratarNotificacao } from '../lib/notificacoes';
 import { adaptarChamado } from '../lib/adapters';
 import { diaMes, horaAgora, iniciais, tempoEspera } from '../lib/format';
 
@@ -120,6 +121,7 @@ export function Console() {
       .listarAtendentes()
       .then((lst) => setAtendentes(lst.map((a) => ({ id: a.id, nome: a.nome, setor: a.setor ?? '' }))))
       .catch(() => {});
+    pedirPermissaoNotif();
     const s = conectarSocket();
     if (s) {
       const recarregar = () => {
@@ -128,6 +130,7 @@ export function Console() {
       };
       s.on('chamado:novo', recarregar);
       s.on('chamado:atualizado', recarregar);
+      s.on('notificacao', tratarNotificacao);
     }
     return () => desconectarSocket();
     // eslint-disable-next-line react-hooks/exhaustive-deps
