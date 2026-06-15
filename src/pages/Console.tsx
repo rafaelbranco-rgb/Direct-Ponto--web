@@ -261,7 +261,7 @@ export function Console() {
         {aba === 'config' ? (
           <Settings />
         ) : aba === 'historico' ? (
-          <Historico chamados={chamados} />
+          <Historico chamados={chamados} onAbrirProtocolo={apiAtiva ? abrirDetalhe : undefined} />
         ) : (
           <Suspense
             fallback={

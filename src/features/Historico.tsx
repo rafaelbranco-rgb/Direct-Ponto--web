@@ -25,7 +25,14 @@ const RESULTADO: Record<StatusChamado, { txt: string; icon: LucideIcon; cls: str
   EM_ATENDIMENTO: { txt: 'Em atendimento', icon: MessageSquare, cls: 'text-[#2e5fbf] bg-[rgba(75,123,224,0.14)]' },
 };
 
-export function Historico({ chamados }: { chamados: Chamado[] }) {
+export function Historico({
+  chamados,
+  onAbrirProtocolo,
+}: {
+  chamados: Chamado[];
+  /** Carrega o detalhe (mensagens) do protocolo no backend ao selecioná-lo. */
+  onAbrirProtocolo?: (id: string) => void;
+}) {
   const { esquema } = useTema();
   const [busca, setBusca] = useState('');
   const [colabSel, setColabSel] = useState<string | null>(null);
@@ -146,7 +153,12 @@ export function Historico({ chamados }: { chamados: Chamado[] }) {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => setProtSel(p.id)}
+                    onClick={() => {
+                      setProtSel(p.id);
+                      // A listagem de filas não traz mensagens; busca o detalhe
+                      // (mensagens) deste protocolo no backend ao selecioná-lo.
+                      onAbrirProtocolo?.(p.id);
+                    }}
                     className={`mb-1.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                       ativo ? 'bg-surface-2' : 'hover:bg-surface/60'
                     }`}>
