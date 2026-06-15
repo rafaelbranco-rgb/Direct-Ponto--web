@@ -16,6 +16,7 @@ export function Login() {
   const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [mostrarAjudaSenha, setMostrarAjudaSenha] = useState(false);
 
   async function fazerLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +105,19 @@ export function Login() {
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] bg-brand py-3 font-bold text-white shadow-[0_8px_22px_rgba(43,87,173,0.45)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-60">
             {enviando ? 'Entrando…' : 'Entrar'} <ArrowRight size={18} />
           </button>
+
+          <button
+            type="button"
+            onClick={() => setMostrarAjudaSenha((v) => !v)}
+            className="mt-4 w-full text-center text-sm font-semibold text-brand-soft transition hover:underline">
+            Esqueci minha senha
+          </button>
+          {mostrarAjudaSenha && (
+            <p className="mt-2 rounded-xl border border-line bg-surface-2/60 p-3 text-center text-xs leading-5 text-ink-dim">
+              Para redefinir sua senha do painel, fale com o administrador do sistema (TI), que pode
+              redefinir o seu acesso de gestor.
+            </p>
+          )}
         </form>
 
         <p className="mt-6 text-center text-xs text-ink-dim">Serviços de Conservação e Manutenção</p>
