@@ -287,7 +287,7 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
               </div>
 
               <p className="mt-5 flex items-center gap-1.5 text-xs text-ink-dim">
-                <XCircle size={13} /> {dados.recusados} recusado(s) no período · dados de demonstração
+                <XCircle size={13} /> {dados.recusados} recusado(s) no período
               </p>
             </>
           )}
