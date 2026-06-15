@@ -112,6 +112,8 @@ export const api = {
   me: () => req<UsuarioApi>('GET', '/auth/me'),
 
   listarChamados: () => req<FilasApi>('GET', '/chamados'),
+  /** Histórico completo (todos os chamados) — igual para qualquer atendente. */
+  listarHistorico: () => req<ChamadoApi[]>('GET', '/chamados/historico'),
   detalhe: (id: string) => req<ChamadoApi>('GET', `/chamados/${id}`),
   enviarMensagem: (id: string, texto: string, anexo?: { nome: string; ehImagem: boolean }) =>
     req<MensagemApi>('POST', `/chamados/${id}/mensagens`, {

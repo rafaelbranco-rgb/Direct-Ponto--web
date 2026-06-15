@@ -36,6 +36,8 @@ export function Console() {
   const { esquema } = useTema();
   const [aba, setAba] = useState<Aba>('atendimentos');
   const [chamados, setChamados] = useState<Chamado[]>(apiAtiva ? [] : CHAMADOS);
+  // Histórico completo (todos os chamados) — igual para qualquer conta de atendente.
+  const [historico, setHistorico] = useState<Chamado[]>(apiAtiva ? [] : CHAMADOS);
   const [selId, setSelId] = useState<string | null>(
     apiAtiva ? null : (CHAMADOS.find((c) => c.status === 'PENDENTE')?.id ?? null),
   );
@@ -120,10 +122,35 @@ export function Console() {
     }
   }
 
+  // ——— Histórico: carrega TODOS os chamados (igual p/ todas as contas) ———
+  async function carregarHistorico() {
+    try {
+      const lista = await api.listarHistorico();
+      setHistorico((prev) => {
+        const msgs = new Map(prev.map((c) => [c.id, c.mensagens]));
+        // Preserva as mensagens já carregadas (a listagem não traz mensagens).
+        return lista
+          .map(adaptarChamado)
+          .map((c) => (c.mensagens.length ? c : { ...c, mensagens: msgs.get(c.id) ?? c.mensagens }));
+      });
+    } catch {
+      /* mantém o que já está na tela */
+    }
+  }
+  async function abrirDetalheHistorico(id: string) {
+    try {
+      const ad = adaptarChamado(await api.detalhe(id));
+      setHistorico((prev) => prev.map((c) => (c.id === id ? ad : c)));
+    } catch {
+      /* ignora */
+    }
+  }
+
   // Com backend ativo: carrega dados + atendentes e liga o tempo real.
   useEffect(() => {
     if (!apiAtiva) return;
     carregar();
+    carregarHistorico();
     api
       .listarAtendentes()
       .then((lst) => setAtendentes(lst.map((a) => ({ id: a.id, nome: a.nome, setor: a.setor ?? '' }))))
@@ -133,6 +160,7 @@ export function Console() {
     if (s) {
       const recarregar = () => {
         carregar();
+        carregarHistorico();
         if (selIdRef.current) abrirDetalhe(selIdRef.current);
       };
       s.on('chamado:novo', recarregar);
@@ -261,7 +289,10 @@ export function Console() {
         {aba === 'config' ? (
           <Settings />
         ) : aba === 'historico' ? (
-          <Historico chamados={chamados} onAbrirProtocolo={apiAtiva ? abrirDetalhe : undefined} />
+          <Historico
+            chamados={apiAtiva ? historico : chamados}
+            onAbrirProtocolo={apiAtiva ? abrirDetalheHistorico : undefined}
+          />
         ) : (
           <Suspense
             fallback={
