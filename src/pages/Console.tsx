@@ -13,9 +13,9 @@ import { CHAMADOS, colaboradorPorId } from '../data/mock';
 import type { Chamado } from '../data/types';
 import { useAuth } from '../context/auth';
 import { useTema } from '../context/theme';
-import { api, apiAtiva, conectarSocket, desconectarSocket } from '../lib/api';
+import { api, apiAtiva, conectarSocket, desconectarSocket, type MensagemApi } from '../lib/api';
 import { pedirPermissaoNotif, tratarNotificacao } from '../lib/notificacoes';
-import { adaptarChamado } from '../lib/adapters';
+import { adaptarChamado, adaptarMensagem } from '../lib/adapters';
 import { diaMes, horaAgora, iniciais, tempoEspera } from '../lib/format';
 
 interface AtendenteOpcao {
@@ -49,16 +49,21 @@ export function Console() {
   const selecionado = chamados.find((c) => c.id === selId) ?? null;
   const selIdRef = useRef<string | null>(selId);
   selIdRef.current = selId;
+  const socketRef = useRef<ReturnType<typeof conectarSocket>>(null);
 
-  // Supervisor/RH vê tudo; atendente vê apenas os chamados atribuídos a ele.
-  const supervisor = gestor?.papel === 'supervisor';
+  // Só posso responder/decidir/transferir se o chamado é meu ou ainda está na
+  // fila (sem dono). Chamado de outro atendente fica somente-leitura.
+  const podeResponder =
+    !!selecionado &&
+    (selecionado.status === 'PENDENTE' ||
+      !selecionado.atendenteId ||
+      (gestor?.id ? selecionado.atendenteId === gestor.id : selecionado.atendente === gestor?.nome));
+
+  // Cada conta vê apenas os chamados atribuídos a ela em "Em atendimento" e
+  // "Encerrados" (todos os papéis funcionam igual; papel é só rótulo). Ao
+  // transferir, o chamado sai da minha lista e entra na do destino.
   const meu = (c: Chamado) =>
-    supervisor || (gestor?.id ? c.atendenteId === gestor.id : c.atendente === gestor?.nome);
-
-  // Relatórios é exclusivo do supervisor/RH: ao rebaixar o papel, sai da aba.
-  useEffect(() => {
-    if (aba === 'relatorios' && !supervisor) setAba('atendimentos');
-  }, [aba, supervisor]);
+    gestor?.id ? c.atendenteId === gestor.id : c.atendente === gestor?.nome;
 
   const { emAtendimento, emEspera, encerrados } = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -70,7 +75,7 @@ export function Console() {
     };
     const filtrados = chamados.filter(passa);
     return {
-      // Em atendimento: só os meus (ou todos, se supervisor).
+      // Em atendimento: só os meus (atribuídos a mim).
       emAtendimento: filtrados
         .filter((c) => c.status === 'EM_ATENDIMENTO' && meu(c))
         .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)),
@@ -78,16 +83,29 @@ export function Console() {
       emEspera: filtrados
         .filter((c) => c.status === 'PENDENTE')
         .sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)),
-      // Encerrados: só os meus (ou todos, se supervisor).
+      // Encerrados: só os meus (o histórico completo fica na aba Histórico).
       encerrados: filtrados
         .filter((c) => (c.status === 'APROVADO' || c.status === 'RECUSADO') && meu(c))
         .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chamados, busca, colabFiltro, supervisor, gestor?.nome]);
+  }, [chamados, busca, colabFiltro, gestor?.id, gestor?.nome]);
 
   function atualizar(id: string, fn: (c: Chamado) => Chamado) {
     setChamados((prev) => prev.map((c) => (c.id === id ? fn(c) : c)));
+  }
+
+  /** Anexa uma mensagem (do socket ou do envio) ao chamado, sem duplicar por id. */
+  function receberMensagem(m: MensagemApi) {
+    const msg = adaptarMensagem(m);
+    const anexar = (lista: Chamado[]) =>
+      lista.map((c) =>
+        c.id === m.chamadoId && !c.mensagens.some((x) => x.id === msg.id)
+          ? { ...c, mensagens: [...c.mensagens, msg] }
+          : c,
+      );
+    setChamados((prev) => anexar(prev));
+    setHistorico((prev) => anexar(prev));
   }
 
   // ——— Modo backend: carrega as filas e o detalhe de um chamado ———
@@ -157,14 +175,22 @@ export function Console() {
       .catch(() => {});
     pedirPermissaoNotif();
     const s = conectarSocket();
+    socketRef.current = s;
     if (s) {
-      const recarregar = () => {
+      // Entra na sala do chamado já aberto (reconexão também).
+      s.on('connect', () => {
+        if (selIdRef.current) s.emit('entrar', selIdRef.current);
+      });
+      // Mensagem nova na conversa aberta: anexa na hora (sem recarregar tudo).
+      s.on('mensagem:nova', (m: MensagemApi) => receberMensagem(m));
+      // Mudança de fila/status (novo chamado, decisão, transferência): atualiza
+      // as listas (as mensagens já chegam por 'mensagem:nova').
+      const atualizarListas = () => {
         carregar();
         carregarHistorico();
-        if (selIdRef.current) abrirDetalhe(selIdRef.current);
       };
-      s.on('chamado:novo', recarregar);
-      s.on('chamado:atualizado', recarregar);
+      s.on('chamado:novo', atualizarListas);
+      s.on('chamado:atualizado', atualizarListas);
       s.on('notificacao', tratarNotificacao);
     }
     return () => desconectarSocket();
@@ -173,9 +199,19 @@ export function Console() {
 
   /** Abre um chamado (carrega a conversa no backend; zera não lidas no demo). */
   function selecionar(id: string) {
+    const anterior = selIdRef.current;
     setSelId(id);
-    if (apiAtiva) abrirDetalhe(id);
-    else atualizar(id, (c) => (c.naoLidas ? { ...c, naoLidas: 0 } : c));
+    if (apiAtiva) {
+      // Troca a sala do socket para receber as mensagens deste chamado na hora.
+      const s = socketRef.current;
+      if (s) {
+        if (anterior && anterior !== id) s.emit('sair', anterior);
+        s.emit('entrar', id);
+      }
+      abrirDetalhe(id);
+    } else {
+      atualizar(id, (c) => (c.naoLidas ? { ...c, naoLidas: 0 } : c));
+    }
   }
 
   /** Puxa um chamado em espera para atendimento e abre a conversa. */
@@ -212,10 +248,12 @@ export function Console() {
   async function enviar(texto: string) {
     if (!selecionado) return;
     if (apiAtiva) {
+      const id = selecionado.id;
       try {
-        await api.enviarMensagem(selecionado.id, texto);
-        await abrirDetalhe(selecionado.id);
-        await carregar();
+        // Mostra a mensagem na hora (com o id real do retorno → sem duplicar com
+        // o eco do socket). A fila se atualiza pelo evento 'chamado:atualizado'.
+        const m = await api.enviarMensagem(id, texto);
+        receberMensagem(m);
       } catch {
         /* ignora */
       }
@@ -257,10 +295,14 @@ export function Console() {
   async function transferir(atendenteId: string, nome: string) {
     if (!selecionado) return;
     if (apiAtiva) {
+      const id = selecionado.id;
       try {
-        await api.transferir(selecionado.id, atendenteId);
+        await api.transferir(id, atendenteId);
+        // O chamado passa a ser do destino: sai da sala, fecha a conversa e some
+        // da minha lista (recarregada). Não consigo mais responder por ele.
+        socketRef.current?.emit('sair', id);
+        if (selIdRef.current === id) setSelId(null);
         await carregar();
-        await abrirDetalhe(selecionado.id);
       } catch {
         /* ignora */
       }
@@ -321,7 +363,7 @@ export function Console() {
               {verEncerrados ? 'Encerrados' : 'Em atendimento'}{' '}
               <span className="text-ink-dim">({verEncerrados ? encerrados.length : emAtendimento.length})</span>
               <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-dim">
-                {supervisor ? 'todos' : 'meus'}
+                meus
               </span>
             </h2>
             <button
@@ -432,6 +474,7 @@ export function Console() {
           <ConversaPane
             key={selecionado.id}
             chamado={selecionado}
+            podeResponder={podeResponder}
             totalDoColaborador={totalDoColaborador}
             atendentes={atendentes}
             onEnviar={enviar}

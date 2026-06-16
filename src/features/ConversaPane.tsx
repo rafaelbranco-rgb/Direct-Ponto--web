@@ -16,6 +16,8 @@ interface AtendenteOpcao {
 
 interface Props {
   chamado: Chamado;
+  /** Se false, a conversa fica somente-leitura (chamado de outro atendente). */
+  podeResponder?: boolean;
   totalDoColaborador: number;
   atendentes?: AtendenteOpcao[];
   onEnviar: (texto: string) => void;
@@ -26,6 +28,7 @@ interface Props {
 
 export function ConversaPane({
   chamado,
+  podeResponder = true,
   totalDoColaborador,
   atendentes,
   onEnviar,
@@ -119,7 +122,7 @@ export function ConversaPane({
         </button>
 
         {/* Transferir chamado para outro atendente */}
-        {!resolvido && (
+        {!resolvido && podeResponder && (
           <div className="relative" ref={transferRef}>
             <button
               onClick={() => setTransferindo((v) => !v)}
@@ -200,7 +203,7 @@ export function ConversaPane({
       </div>
 
       {/* Barra de decisão */}
-      {!resolvido && (
+      {!resolvido && podeResponder && (
         <div className="mx-auto w-full max-w-[820px] px-5">
           {recusando ? (
             <div className="mb-2 rounded-xl border border-[#5a2a2a] bg-[rgba(224,90,80,0.10)] p-3">
@@ -241,7 +244,15 @@ export function ConversaPane({
         </div>
       )}
 
-      {/* Composer */}
+      {/* Composer — ou aviso de somente-leitura (chamado de outro atendente) */}
+      {!podeResponder && !resolvido ? (
+        <div className="mx-auto w-full max-w-[820px] px-5 pb-5">
+          <div className="glass flex items-center justify-center gap-2 rounded-[24px] px-4 py-3 text-sm text-ink-dim">
+            <ArrowLeftRight size={16} />
+            Este atendimento foi transferido para {chamado.atendente ?? 'outro atendente'} — somente leitura.
+          </div>
+        </div>
+      ) : (
       <div className="mx-auto w-full max-w-[820px] px-5 pb-5">
         <div className="glass flex items-end gap-2 rounded-[24px] px-3 py-2">
           <button className="pb-2 text-ink-dim" title="Anexar">
@@ -268,6 +279,7 @@ export function ConversaPane({
           </button>
         </div>
       </div>
+      )}
     </section>
   );
 }

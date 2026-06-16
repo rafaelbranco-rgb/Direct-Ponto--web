@@ -19,10 +19,11 @@ import { iniciais } from '../lib/format';
 
 export type Aba = 'atendimentos' | 'historico' | 'relatorios' | 'config';
 
-const ITENS: { aba: Aba; icon: LucideIcon; label: string; soSupervisor?: boolean }[] = [
+// Todas as abas ficam disponíveis para qualquer conta (papel é só rótulo).
+const ITENS: { aba: Aba; icon: LucideIcon; label: string }[] = [
   { aba: 'atendimentos', icon: MessageSquare, label: 'Atendimentos' },
   { aba: 'historico', icon: History, label: 'Histórico' },
-  { aba: 'relatorios', icon: BarChart3, label: 'Relatórios', soSupervisor: true },
+  { aba: 'relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
 export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
@@ -40,7 +41,7 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
     return () => document.removeEventListener('mousedown', fora);
   }, [trocando]);
 
-  const itens = ITENS.filter((it) => !it.soSupervisor || supervisor);
+  const itens = ITENS;
 
   function trocarPara(nome: string, papel: Papel, id: string) {
     entrar({ nome, identificador: id, papel });

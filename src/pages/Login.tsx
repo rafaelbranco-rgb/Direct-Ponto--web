@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 
 import { Logo } from '../components/Logo';
 import { useAuth } from '../context/auth';
@@ -21,7 +21,7 @@ export function Login() {
   async function fazerLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!identificador.trim() || !senha.trim()) {
-      setErro('Informe seu CPF/matrícula e a senha.');
+      setErro('Informe seu e-mail e a senha.');
       return;
     }
     if (apiAtiva) {
@@ -65,17 +65,19 @@ export function Login() {
 
         <form onSubmit={fazerLogin} className="glass rounded-[22px] p-6 shadow-[0_18px_44px_rgba(0,0,0,0.32)]">
           <h2 className="text-[22px] font-bold text-ink">Acesse o painel</h2>
-          <p className="mt-1 text-sm text-ink-dim">Use seu CPF ou matrícula de gestor.</p>
+          <p className="mt-1 text-sm text-ink-dim">Use o e-mail e a senha cadastrados.</p>
 
           <Campo>
-            <User size={20} className="text-ink-dim" />
+            <Mail size={20} className="text-ink-dim" />
             <input
               value={identificador}
               onChange={(e) => {
                 setIdentificador(e.target.value);
                 setErro('');
               }}
-              placeholder="CPF ou matrícula"
+              type="email"
+              autoComplete="username"
+              placeholder="E-mail"
               className="w-full bg-transparent text-ink outline-none placeholder:text-ink-dim/70"
             />
           </Campo>
@@ -89,6 +91,7 @@ export function Login() {
                 setErro('');
               }}
               type={verSenha ? 'text' : 'password'}
+              autoComplete="current-password"
               placeholder="Senha"
               className="w-full bg-transparent text-ink outline-none placeholder:text-ink-dim/70"
             />

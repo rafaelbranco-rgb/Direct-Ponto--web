@@ -6,6 +6,7 @@ import {
   Inbox,
   KeyRound,
   LogOut,
+  Mail,
   MessageSquare,
   Monitor,
   Moon,
@@ -14,6 +15,7 @@ import {
   Settings as SettingsIcon,
   Shield,
   Sun,
+  User,
   UserCog,
   UserPlus,
   Volume2,
@@ -160,8 +162,8 @@ export function Settings() {
           </section>
         )}
 
-        {/* Usuários do sistema (só supervisor, com backend) */}
-        {apiAtiva && supervisor && (
+        {/* Usuários do sistema (qualquer conta — papel é só rótulo) */}
+        {apiAtiva && (
           <section className="mb-6">
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Usuários do sistema</h2>
             <CriarUsuario />
@@ -352,7 +354,19 @@ function TrocarSenha() {
   );
 }
 
-/** Supervisor cria um novo usuário do painel (atendente ou supervisor). */
+/** Cria um novo usuário do painel. Os papéis têm os mesmos acessos — o papel
+ *  serve apenas como rótulo de identificação. */
+const PAPEIS: {
+  valor: 'ATENDENTE' | 'SUPERVISOR';
+  titulo: string;
+  desc: string;
+  icon: LucideIcon;
+  cor: string;
+}[] = [
+  { valor: 'ATENDENTE', titulo: 'Atendente', desc: 'Atende e resolve chamados', icon: UserCog, cor: '#2bb673' },
+  { valor: 'SUPERVISOR', titulo: 'Supervisor / RH', desc: 'Mesmo acesso — rótulo de gestão', icon: Shield, cor: '#7c5cff' },
+];
+
 function CriarUsuario() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -376,7 +390,7 @@ function CriarUsuario() {
         senha,
         papel,
       });
-      setOk(`Usuário "${u.nome}" criado como ${papel === 'SUPERVISOR' ? 'Supervisor' : 'Atendente'}.`);
+      setOk(`Usuário "${u.nome}" criado. Ele entra com o e-mail e a senha definidos aqui.`);
       setNome('');
       setEmail('');
       setSenha('');
@@ -389,56 +403,119 @@ function CriarUsuario() {
   }
 
   return (
-    <form onSubmit={criar} className="glass rounded-2xl p-4">
-      <div className="mb-3 flex items-center gap-2 text-ink">
-        <UserPlus size={18} className="text-brand-soft" />
-        <span className="font-semibold">Criar usuário</span>
-      </div>
-      <p className="mb-3 text-xs text-ink-dim">
-        O usuário entra no painel com o e-mail e a senha definidos aqui (pode trocar a senha depois).
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <input
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Nome"
-          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-dim/70 focus:border-brand"
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="E-mail"
-          className="rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-dim/70 focus:border-brand"
-        />
-        <CampoSenha valor={senha} onChange={setSenha} placeholder="Senha (mín. 6)" />
-        <div className="flex rounded-xl border border-line bg-surface p-1">
-          {(['ATENDENTE', 'SUPERVISOR'] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPapel(p)}
-              className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
-                papel === p ? 'bg-brand text-white' : 'text-ink-dim hover:text-ink'
-              }`}>
-              {p === 'ATENDENTE' ? 'Atendente' : 'Supervisor / RH'}
-            </button>
-          ))}
+    <form onSubmit={criar} className="glass overflow-hidden rounded-2xl">
+      {/* Cabeçalho do cartão */}
+      <div className="flex items-center gap-3 border-b border-line bg-surface-2/40 px-5 py-4">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand-soft">
+          <UserPlus size={20} />
+        </div>
+        <div>
+          <div className="font-semibold text-ink">Criar usuário do painel</div>
+          <div className="text-xs text-ink-dim">Acesso por e-mail e senha — o usuário pode trocar a senha depois.</div>
         </div>
       </div>
-      {erro && <p className="mt-2 text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
-      {ok && (
-        <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-[#3fcf8e]">
-          <Check size={15} /> {ok}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={enviando}
-        className="mt-3 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
-        {enviando ? 'Criando…' : 'Criar usuário'}
-      </button>
+
+      <div className="flex flex-col gap-4 p-5">
+        <CampoRotulado rotulo="Nome completo" icon={User}>
+          <input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Ex.: Maria Souza"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/60"
+          />
+        </CampoRotulado>
+
+        <CampoRotulado rotulo="E-mail de acesso" icon={Mail}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nome@empresa.com"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/60"
+          />
+        </CampoRotulado>
+
+        <CampoRotulado rotulo="Senha provisória" icon={KeyRound}>
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            placeholder="Mínimo de 6 caracteres"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim/60"
+          />
+        </CampoRotulado>
+
+        {/* Papel (apenas rótulo) */}
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-ink-dim">Papel (somente rótulo)</label>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {PAPEIS.map((p) => {
+              const ativo = papel === p.valor;
+              return (
+                <button
+                  key={p.valor}
+                  type="button"
+                  onClick={() => setPapel(p.valor)}
+                  className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition ${
+                    ativo ? 'border-brand bg-brand/5' : 'border-line hover:border-line/80 hover:bg-surface-2/40'
+                  }`}>
+                  <span
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg"
+                    style={{ background: `${p.cor}22`, color: p.cor }}>
+                    <p.icon size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-ink">{p.titulo}</span>
+                    <span className="block text-[11px] leading-tight text-ink-dim">{p.desc}</span>
+                  </span>
+                  <span
+                    className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+                      ativo ? 'border-brand bg-brand' : 'border-line'
+                    }`}>
+                    {ativo && <Check size={11} className="text-white" />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {erro && <p className="text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
+        {ok && (
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-[#3fcf8e]">
+            <Check size={15} /> {ok}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={enviando}
+          className="flex items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white shadow-[0_8px_22px_rgba(43,87,173,0.30)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-50">
+          <UserPlus size={16} /> {enviando ? 'Criando…' : 'Criar usuário'}
+        </button>
+      </div>
     </form>
+  );
+}
+
+/** Campo com rótulo + ícone à esquerda (visual consistente do formulário). */
+function CampoRotulado({
+  rotulo,
+  icon: Icon,
+  children,
+}: {
+  rotulo: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-semibold text-ink-dim">{rotulo}</label>
+      <div className="flex items-center gap-2.5 rounded-xl border border-line bg-surface px-3 py-2.5 transition focus-within:border-brand">
+        <Icon size={17} className="shrink-0 text-ink-dim" />
+        {children}
+      </div>
+    </div>
   );
 }
 
