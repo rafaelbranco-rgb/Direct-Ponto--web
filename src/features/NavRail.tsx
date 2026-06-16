@@ -65,7 +65,7 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
 
   return (
     <nav
-      className={`glass-strong relative z-50 flex shrink-0 flex-col border-r border-line py-3 transition-[width] duration-300 ease-[cubic-bezier(0.2,0.84,0.2,1)] ${
+      className={`glass-strong relative z-50 flex shrink-0 flex-col border-r border-line py-3 transition-[width] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
         recolhida ? 'w-[76px] px-2' : 'w-[212px] px-3'
       }`}>
       {/* Topo: a PRÓPRIA logo é o botão de recolher/expandir. */}
@@ -73,17 +73,25 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
         onClick={() => setRecolhida((v) => !v)}
         title={recolhida ? 'Expandir menu' : 'Recolher menu'}
         aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'}
-        className={`group flex items-center overflow-hidden rounded-xl py-1 transition ${
-          recolhida ? 'justify-center' : 'gap-2.5 px-1'
+        className={`group flex items-center overflow-hidden rounded-xl py-1 ${
+          recolhida ? 'justify-center' : 'px-1'
         }`}>
-        <span className="grid shrink-0 place-items-center rounded-xl transition duration-300 group-hover:scale-105 group-active:scale-95">
+        <span className="grid shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
           <Logo size={40} />
         </span>
+        {/* Lockup da marca: nome + eyebrow dourado. Revela com fade+slide suave. */}
         <span
-          className={`wordmark whitespace-nowrap text-[19px] font-bold leading-none text-ink transition-all duration-300 ease-[cubic-bezier(0.2,0.84,0.2,1)] ${
-            recolhida ? 'max-w-0 -translate-x-2 opacity-0' : 'max-w-[150px] translate-x-0 opacity-100'
+          className={`flex flex-col justify-center overflow-hidden transition-all duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            recolhida ? 'ml-0 max-w-0 -translate-x-1 opacity-0' : 'ml-2.5 max-w-[150px] translate-x-0 opacity-100'
           }`}>
-          Contato
+          <span
+            className="wordmark whitespace-nowrap text-[16px] font-semibold leading-tight text-ink"
+            style={{ letterSpacing: '0.06em' }}>
+            Contato
+          </span>
+          <span className="whitespace-nowrap text-[8.5px] font-bold uppercase leading-none tracking-[0.32em] text-gold">
+            Atendimento
+          </span>
         </span>
       </button>
 
