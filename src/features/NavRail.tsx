@@ -5,8 +5,6 @@ import {
   History,
   LogOut,
   MessageSquare,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings as SettingsIcon,
   Shield,
   UserCog,
@@ -70,29 +68,24 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
       className={`glass-strong relative z-50 flex shrink-0 flex-col border-r border-line py-3 transition-[width] duration-300 ease-[cubic-bezier(0.2,0.84,0.2,1)] ${
         recolhida ? 'w-[76px] px-2' : 'w-[212px] px-3'
       }`}>
-      {/* Topo: logo + recolher */}
-      <div className={`flex items-center ${recolhida ? 'justify-center' : 'justify-between px-1'}`}>
-        <div className="flex items-center gap-2 overflow-hidden">
-          <Logo size={recolhida ? 40 : 36} />
-          {!recolhida && <span className="wordmark whitespace-nowrap text-lg font-bold text-ink">Contato</span>}
-        </div>
-        {!recolhida && (
-          <button
-            onClick={() => setRecolhida(true)}
-            title="Recolher menu"
-            className="grid h-8 w-8 place-items-center rounded-lg text-ink-dim transition hover:bg-surface-2 hover:text-ink">
-            <PanelLeftClose size={18} />
-          </button>
-        )}
-      </div>
-      {recolhida && (
-        <button
-          onClick={() => setRecolhida(false)}
-          title="Expandir menu"
-          className="mt-2 grid h-8 w-full place-items-center rounded-lg text-ink-dim transition hover:bg-surface-2 hover:text-ink">
-          <PanelLeftOpen size={18} />
-        </button>
-      )}
+      {/* Topo: a PRÓPRIA logo é o botão de recolher/expandir. */}
+      <button
+        onClick={() => setRecolhida((v) => !v)}
+        title={recolhida ? 'Expandir menu' : 'Recolher menu'}
+        aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'}
+        className={`group flex items-center overflow-hidden rounded-xl py-1 transition ${
+          recolhida ? 'justify-center' : 'gap-2.5 px-1'
+        }`}>
+        <span className="grid shrink-0 place-items-center rounded-xl transition duration-300 group-hover:scale-105 group-active:scale-95">
+          <Logo size={40} />
+        </span>
+        <span
+          className={`wordmark whitespace-nowrap text-[19px] font-bold leading-none text-ink transition-all duration-300 ease-[cubic-bezier(0.2,0.84,0.2,1)] ${
+            recolhida ? 'max-w-0 -translate-x-2 opacity-0' : 'max-w-[150px] translate-x-0 opacity-100'
+          }`}>
+          Contato
+        </span>
+      </button>
 
       {/* Navegação principal */}
       <div className="mt-4 flex flex-1 flex-col gap-1.5">
