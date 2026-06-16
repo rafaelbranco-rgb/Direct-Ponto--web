@@ -21,6 +21,7 @@ interface Props {
   totalDoColaborador: number;
   atendentes?: AtendenteOpcao[];
   onEnviar: (texto: string) => void;
+  onEnviarAnexo?: (arquivo: File) => void;
   onDecidir: (decisao: 'APROVADO' | 'RECUSADO', motivo?: string) => void;
   onVerHistorico: () => void;
   onTransferir: (atendenteId: string, nome: string) => void;
@@ -32,6 +33,7 @@ export function ConversaPane({
   totalDoColaborador,
   atendentes,
   onEnviar,
+  onEnviarAnexo,
   onDecidir,
   onVerHistorico,
   onTransferir,
@@ -50,6 +52,7 @@ export function ConversaPane({
   const [buscaAtendente, setBuscaAtendente] = useState('');
   const fimRef = useRef<HTMLDivElement>(null);
   const transferRef = useRef<HTMLDivElement>(null);
+  const arquivoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -255,11 +258,22 @@ export function ConversaPane({
       ) : (
       <div className="mx-auto w-full max-w-[820px] px-5 pb-5">
         <div className="glass flex items-end gap-2 rounded-[24px] px-3 py-2">
+          <input
+            ref={arquivoRef}
+            type="file"
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onEnviarAnexo?.(f);
+              e.target.value = '';
+            }}
+          />
           <button
             type="button"
-            disabled
-            className="cursor-not-allowed pb-2 text-ink-dim/50"
-            title="Envio de anexos pelo painel em breve">
+            onClick={() => arquivoRef.current?.click()}
+            className="pb-2 text-ink-dim transition hover:text-ink"
+            title="Anexar foto ou documento">
             <Paperclip size={20} />
           </button>
           <textarea

@@ -31,9 +31,29 @@ export function MensagemBolha({ m, anterior }: { m: Mensagem; anterior?: Mensage
         }`}>
         {m.anexo &&
           (m.anexo.ehImagem ? (
-            <div className="mb-1 flex h-36 w-52 items-center justify-center rounded-lg bg-black/25 text-white/70">
-              <ImageIcon size={28} />
-            </div>
+            m.anexo.url ? (
+              <a href={m.anexo.url} target="_blank" rel="noreferrer" className="mb-1 block">
+                <img
+                  src={m.anexo.url}
+                  alt={m.anexo.nome}
+                  loading="lazy"
+                  className="max-h-64 w-auto max-w-full rounded-lg object-cover"
+                />
+              </a>
+            ) : (
+              // Anexo antigo (sem arquivo armazenado) — não há como exibir.
+              <div className="mb-1 flex items-center gap-2 text-xs opacity-80">
+                <ImageIcon size={18} /> <span>{m.anexo.nome} (indisponível)</span>
+              </div>
+            )
+          ) : m.anexo.url ? (
+            <a
+              href={m.anexo.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-1 flex items-center gap-2 underline-offset-2 hover:underline">
+              <FileText size={20} /> <span className="text-[15px] font-semibold">{m.anexo.nome}</span>
+            </a>
           ) : (
             <div className="mb-1 flex items-center gap-2">
               <FileText size={20} /> <span className="text-[15px] font-semibold">{m.anexo.nome}</span>

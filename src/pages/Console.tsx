@@ -267,6 +267,18 @@ export function Console() {
     }));
   }
 
+  /** Envia um anexo (foto/documento) no chamado aberto e mostra na hora. */
+  async function enviarAnexo(arquivo: File) {
+    if (!selecionado || !apiAtiva) return;
+    const id = selecionado.id;
+    try {
+      const m = await api.enviarAnexo(id, arquivo);
+      receberMensagem(m);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Não foi possível enviar o anexo.');
+    }
+  }
+
   async function decidir(decisao: 'APROVADO' | 'RECUSADO', motivo?: string) {
     if (!selecionado) return;
     if (apiAtiva) {
@@ -479,6 +491,7 @@ export function Console() {
             totalDoColaborador={totalDoColaborador}
             atendentes={atendentes}
             onEnviar={enviar}
+            onEnviarAnexo={enviarAnexo}
             onDecidir={decidir}
             onVerHistorico={() => setColabFiltro(selecionado.colaboradorId)}
             onTransferir={transferir}

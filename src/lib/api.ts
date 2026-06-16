@@ -114,7 +114,15 @@ export interface MensagemApi {
   horario: string | null;
   anexoNome: string | null;
   anexoEhImagem: boolean | null;
+  anexoMime?: string | null;
+  anexoArquivo?: string | null;
   criadoEm: string;
+}
+
+/** URL (com token na query, p/ <img>/<a>) para baixar/ver um anexo de mensagem. */
+export function urlAnexo(mensagemId: string): string {
+  const t = getToken();
+  return `${BASE}/api/anexos/${mensagemId}${t ? `?token=${encodeURIComponent(t)}` : ''}`;
 }
 export interface ChamadoApi {
   id: string;
@@ -161,6 +169,23 @@ export const api = {
       anexoNome: anexo?.nome,
       anexoEhImagem: anexo?.ehImagem,
     }),
+  /** Sobe um arquivo (foto/documento) como mensagem. Não usa req() por ser multipart. */
+  enviarAnexo: async (id: string, arquivo: File): Promise<MensagemApi> => {
+    const form = new FormData();
+    form.append('arquivo', arquivo, arquivo.name);
+    const token = getToken();
+    const res = await fetch(`${BASE}/api/chamados/${id}/anexos`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    const dados = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = Array.isArray(dados?.message) ? dados.message.join(', ') : (dados?.message ?? `Erro ${res.status}`);
+      throw new ApiError(res.status, msg);
+    }
+    return dados as MensagemApi;
+  },
   atender: (id: string) => req<ChamadoApi>('POST', `/chamados/${id}/atender`),
   decidir: (id: string, decisao: 'APROVADO' | 'RECUSADO', motivo?: string) =>
     req<ChamadoApi>('POST', `/chamados/${id}/decisao`, { decisao, motivo }),

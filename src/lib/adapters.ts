@@ -1,7 +1,7 @@
 /** Converte os dados do backend para os tipos que os componentes já usam. */
 import { registrarColaborador } from '../data/mock';
 import type { CategoriaCodigo, Chamado, Mensagem } from '../data/types';
-import type { ChamadoApi, MensagemApi } from './api';
+import { urlAnexo, type ChamadoApi, type MensagemApi } from './api';
 
 function dataLinha(iso: string, horario: string | null): string {
   const d = new Date(iso);
@@ -19,7 +19,14 @@ export function adaptarMensagem(m: MensagemApi): Mensagem {
     texto: m.texto,
     horario: sistema ? undefined : (m.horario ?? undefined),
     data: sistema ? dataLinha(m.criadoEm, m.horario) : undefined,
-    anexo: m.anexoNome ? { nome: m.anexoNome, ehImagem: !!m.anexoEhImagem } : undefined,
+    anexo: m.anexoNome
+      ? {
+          nome: m.anexoNome,
+          ehImagem: !!m.anexoEhImagem,
+          // URL só existe para anexos realmente armazenados (mensagens novas).
+          url: m.anexoArquivo ? urlAnexo(m.id) : undefined,
+        }
+      : undefined,
   };
 }
 
