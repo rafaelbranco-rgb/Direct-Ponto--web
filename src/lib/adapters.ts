@@ -47,6 +47,7 @@ export function adaptarChamado(c: ChamadoApi): Chamado {
     atendente: c.atendente?.nome ?? undefined,
     atendenteId: c.atendenteId ?? undefined,
     motivoRecusa: c.motivoRecusa ?? undefined,
+    atualizadoEm: c.atualizadoEm ?? undefined,
     mensagens: (c.mensagens ?? []).map(adaptarMensagem),
   };
 }

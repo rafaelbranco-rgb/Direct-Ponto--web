@@ -255,7 +255,11 @@ export function ConversaPane({
       ) : (
       <div className="mx-auto w-full max-w-[820px] px-5 pb-5">
         <div className="glass flex items-end gap-2 rounded-[24px] px-3 py-2">
-          <button className="pb-2 text-ink-dim" title="Anexar">
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed pb-2 text-ink-dim/50"
+            title="Envio de anexos pelo painel em breve">
             <Paperclip size={20} />
           </button>
           <textarea

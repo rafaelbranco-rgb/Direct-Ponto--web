@@ -1,7 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { api, apiAtiva, ApiError, getToken, setToken, type UsuarioApi } from '../lib/api';
+import {
+  api,
+  apiAtiva,
+  ApiError,
+  getToken,
+  gravarArmazenado,
+  lerArmazenado,
+  setToken,
+  type UsuarioApi,
+} from '../lib/api';
 
 export type Papel = 'atendente' | 'supervisor';
 
@@ -34,21 +43,18 @@ function mapear(u: UsuarioApi): Gestor {
   };
 }
 
+// Cache por aba (mesma estratégia do token: sessionStorage com seed do
+// localStorage) — assim cada aba mantém a identidade da sua própria conta.
 function carregarCache(): Gestor | null {
   try {
-    const v = localStorage.getItem(CHAVE);
+    const v = lerArmazenado(CHAVE);
     return v ? (JSON.parse(v) as Gestor) : null;
   } catch {
     return null;
   }
 }
 function salvarCache(g: Gestor | null) {
-  try {
-    if (g) localStorage.setItem(CHAVE, JSON.stringify(g));
-    else localStorage.removeItem(CHAVE);
-  } catch {
-    /* ignora */
-  }
+  gravarArmazenado(CHAVE, g ? JSON.stringify(g) : null);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

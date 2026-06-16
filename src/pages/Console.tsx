@@ -438,6 +438,7 @@ export function Console() {
                   emEspera.map((c) => {
                     const colab = colaboradorPorId(c.colaboradorId);
                     const cat = CATEGORIAS[c.categoria];
+                    const CatIcon = cat?.icon ?? MessageSquare;
                     return (
                       <div
                         key={c.id}
@@ -446,12 +447,12 @@ export function Console() {
                         }`}>
                         <button onClick={() => selecionar(c.id)} className="min-w-0 flex-1 text-left">
                           <div className="flex items-center gap-2">
-                            <span className="truncate text-sm font-semibold text-ink">{colab?.nome}</span>
+                            <span className="truncate text-sm font-semibold text-ink">{colab?.nome ?? 'Colaborador'}</span>
                             {!!c.naoLidas && <Badge n={c.naoLidas} />}
                           </div>
                           <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-dim">
-                            <cat.icon size={13} className="shrink-0 text-gold" />
-                            <span className="truncate">Assunto: {cat.label}</span>
+                            <CatIcon size={13} className="shrink-0 text-gold" />
+                            <span className="truncate">Assunto: {cat?.label ?? c.categoria}</span>
                           </div>
                           <div className="mt-1 text-[11px] text-ink-dim">{tempoEspera(c.criadoEm)}</div>
                         </button>
@@ -507,6 +508,9 @@ function CardAtendimento({
 }) {
   const colab = colaboradorPorId(c.colaboradorId);
   const cat = CATEGORIAS[c.categoria];
+  const CatIcon = cat?.icon ?? MessageSquare;
+  const catLabel = cat?.label ?? c.categoria;
+  const nomeColab = colab?.nome ?? 'Colaborador';
   const st = statusCor(c.status, esquema);
   const u = ultima(c);
   const preview = u?.texto || (u?.anexo ? 'Anexo enviado' : u?.data) || '';
@@ -517,7 +521,7 @@ function CardAtendimento({
         ativo ? 'bg-surface-2' : 'hover:bg-surface/60'
       }`}>
       <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand/20 text-sm font-bold text-brand-soft">
-        {iniciais(colab?.nome ?? '?')}
+        {iniciais(nomeColab)}
         <span
           className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-navy"
           style={{ background: st.dot }}
@@ -530,12 +534,12 @@ function CardAtendimento({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-ink">{colab?.nome}</span>
+          <span className="truncate text-sm font-semibold text-ink">{nomeColab}</span>
           <span className="shrink-0 text-[11px] text-ink-dim">{diaMes(c.criadoEm)}</span>
         </div>
         <div className="mt-0.5 flex items-center gap-1 text-xs text-ink-dim">
-          <cat.icon size={13} className="shrink-0 text-gold" />
-          <span className="truncate">{GRUPO} · {cat.label}</span>
+          <CatIcon size={13} className="shrink-0 text-gold" />
+          <span className="truncate">{GRUPO} · {catLabel}</span>
         </div>
         <div className="mt-0.5 truncate text-xs text-ink-dim">
           Protocolo: {c.protocolo} — {preview}

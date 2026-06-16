@@ -13,6 +13,14 @@ export function diaMes(iso: string): string {
   return `${dia} ${MESES[i]}`;
 }
 
+/** Data + hora a partir de um ISO (ex.: "16/06/2026 às 20:33"). */
+export function dataHoraBR(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} às ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
   const a = partes[0]?.[0] ?? '';

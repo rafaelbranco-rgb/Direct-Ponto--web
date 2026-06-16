@@ -5,6 +5,8 @@ import {
   History,
   LogOut,
   MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings as SettingsIcon,
   Shield,
   UserCog,
@@ -26,11 +28,28 @@ const ITENS: { aba: Aba; icon: LucideIcon; label: string }[] = [
   { aba: 'relatorios', icon: BarChart3, label: 'Relatórios' },
 ];
 
+const CHAVE_RECOLHIDA = 'contato-web:nav-recolhida';
+
 export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
   const { gestor, entrar, sair } = useAuth();
   const supervisor = gestor?.papel === 'supervisor';
   const [trocando, setTrocando] = useState(false);
+  const [recolhida, setRecolhida] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(CHAVE_RECOLHIDA) === '1';
+    } catch {
+      return false;
+    }
+  });
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAVE_RECOLHIDA, recolhida ? '1' : '0');
+    } catch {
+      /* ignora */
+    }
+  }, [recolhida]);
 
   useEffect(() => {
     if (!trocando) return;
@@ -41,44 +60,88 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
     return () => document.removeEventListener('mousedown', fora);
   }, [trocando]);
 
-  const itens = ITENS;
-
   function trocarPara(nome: string, papel: Papel, id: string) {
     entrar({ nome, identificador: id, papel });
     setTrocando(false);
   }
 
   return (
-    <nav className="glass-strong relative z-50 flex w-[84px] shrink-0 flex-col items-center border-r border-line py-3">
-      <Logo size={42} />
+    <nav
+      className={`glass-strong relative z-50 flex shrink-0 flex-col border-r border-line py-3 transition-[width] duration-300 ease-[cubic-bezier(0.2,0.84,0.2,1)] ${
+        recolhida ? 'w-[76px] px-2' : 'w-[212px] px-3'
+      }`}>
+      {/* Topo: logo + recolher */}
+      <div className={`flex items-center ${recolhida ? 'justify-center' : 'justify-between px-1'}`}>
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Logo size={recolhida ? 40 : 36} />
+          {!recolhida && <span className="wordmark whitespace-nowrap text-lg font-bold text-ink">Contato</span>}
+        </div>
+        {!recolhida && (
+          <button
+            onClick={() => setRecolhida(true)}
+            title="Recolher menu"
+            className="grid h-8 w-8 place-items-center rounded-lg text-ink-dim transition hover:bg-surface-2 hover:text-ink">
+            <PanelLeftClose size={18} />
+          </button>
+        )}
+      </div>
+      {recolhida && (
+        <button
+          onClick={() => setRecolhida(false)}
+          title="Expandir menu"
+          className="mt-2 grid h-8 w-full place-items-center rounded-lg text-ink-dim transition hover:bg-surface-2 hover:text-ink">
+          <PanelLeftOpen size={18} />
+        </button>
+      )}
 
+      {/* Navegação principal */}
       <div className="mt-4 flex flex-1 flex-col gap-1.5">
-        {itens.map((it) => (
-          <RailBtn key={it.aba} icon={it.icon} label={it.label} ativo={aba === it.aba} onClick={() => onAba(it.aba)} />
+        {ITENS.map((it) => (
+          <RailBtn
+            key={it.aba}
+            icon={it.icon}
+            label={it.label}
+            ativo={aba === it.aba}
+            recolhida={recolhida}
+            onClick={() => onAba(it.aba)}
+          />
         ))}
       </div>
 
-      <div className="flex flex-col items-center gap-1.5">
-        <RailBtn icon={SettingsIcon} label="Config." ativo={aba === 'config'} onClick={() => onAba('config')} />
+      {/* Rodapé: config, identidade, sair */}
+      <div className="flex flex-col gap-1.5">
+        <RailBtn
+          icon={SettingsIcon}
+          label="Configurações"
+          ativo={aba === 'config'}
+          recolhida={recolhida}
+          onClick={() => onAba('config')}
+        />
 
         {/* Identidade do atendente + troca rápida (demo do modelo de filas) */}
         <div className="relative" ref={ref}>
           <button
             onClick={() => !apiAtiva && setTrocando((v) => !v)}
-            title={
-              apiAtiva
-                ? `${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'}`
-                : `${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'} · trocar`
-            }
-            className={`mt-1 grid h-10 w-10 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft ring-2 ring-transparent transition ${
-              apiAtiva ? 'cursor-default' : 'hover:ring-gold/60'
-            }`}>
-            {iniciais(gestor?.nome ?? 'Atendente')}
-            <span
-              className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full border-2 border-navy"
-              style={{ background: supervisor ? '#7c5cff' : '#2bb673' }}>
-              {supervisor ? <Shield size={9} className="text-white" /> : <UserCog size={9} className="text-white" />}
+            title={`${gestor?.nome ?? 'Atendente'} — ${supervisor ? 'Supervisor/RH' : 'Atendente'}${apiAtiva ? '' : ' · trocar'}`}
+            className={`flex w-full items-center rounded-xl py-1.5 transition ${
+              recolhida ? 'justify-center' : 'gap-2.5 px-2'
+            } ${apiAtiva ? 'cursor-default' : 'hover:bg-surface-2'}`}>
+            <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/25 text-sm font-bold text-brand-soft">
+              {iniciais(gestor?.nome ?? 'Atendente')}
+              <span
+                className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full border-2 border-navy"
+                style={{ background: supervisor ? '#7c5cff' : '#2bb673' }}>
+                {supervisor ? <Shield size={9} className="text-white" /> : <UserCog size={9} className="text-white" />}
+              </span>
             </span>
+            {!recolhida && (
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block truncate text-sm font-semibold text-ink">{gestor?.nome ?? 'Atendente'}</span>
+                <span className="block truncate text-[11px] text-ink-dim">
+                  {supervisor ? 'Supervisor / RH' : 'Atendente'}
+                </span>
+              </span>
+            )}
           </button>
 
           {!apiAtiva && trocando && (
@@ -117,7 +180,7 @@ export function NavRail({ aba, onAba }: { aba: Aba; onAba: (a: Aba) => void }) {
           )}
         </div>
 
-        <RailBtn icon={LogOut} label="Sair" perigo onClick={sair} />
+        <RailBtn icon={LogOut} label="Sair" perigo recolhida={recolhida} onClick={sair} />
       </div>
     </nav>
   );
@@ -128,27 +191,31 @@ function RailBtn({
   label,
   ativo,
   perigo,
+  recolhida,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   ativo?: boolean;
   perigo?: boolean;
+  recolhida: boolean;
   onClick?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
       title={label}
-      className={`flex w-[68px] flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-semibold transition ${
+      className={`group flex items-center rounded-xl text-sm font-semibold transition ${
+        recolhida ? 'h-11 w-11 justify-center self-center' : 'w-full gap-3 px-3 py-2.5'
+      } ${
         ativo
-          ? 'bg-brand/90 text-white'
+          ? 'bg-brand text-white shadow-[0_6px_16px_rgba(43,87,173,0.30)]'
           : perigo
             ? 'text-ink-dim hover:bg-[rgba(224,90,80,0.14)] hover:text-[#ff9c8e]'
             : 'text-ink-dim hover:bg-surface-2 hover:text-ink'
       }`}>
-      <Icon size={21} />
-      <span className="leading-none">{label}</span>
+      <Icon size={20} className="shrink-0" />
+      {!recolhida && <span className="truncate">{label}</span>}
     </button>
   );
 }

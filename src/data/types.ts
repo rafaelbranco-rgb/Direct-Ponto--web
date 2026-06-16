@@ -58,6 +58,8 @@ export interface Chamado {
   /** id do atendente responsável (modo backend) */
   atendenteId?: string;
   motivoRecusa?: string;
+  /** última atualização (ISO) — usada como data de encerramento dos resolvidos */
+  atualizadoEm?: string;
   /** mensagens do colaborador ainda não lidas pelo gestor */
   naoLidas?: number;
   mensagens: Mensagem[];

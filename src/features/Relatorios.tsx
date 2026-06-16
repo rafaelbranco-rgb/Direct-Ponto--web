@@ -154,11 +154,12 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
           ) : (
             <>
               {/* KPIs */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 <Kpi i={0} icon={MessageSquare} cor="#4b7be0" label="Total de chamados" valor={dados.total} />
                 <Kpi i={1} icon={Clock} cor="#e6a92e" label="Em aberto" valor={dados.emAberto} />
                 <Kpi i={2} icon={CheckCircle2} cor="#2bb673" label="Aprovados" valor={dados.aprovados} />
-                <Kpi i={3} icon={ThumbsUp} cor="#7c5cff" label="Taxa de aprovação" valor={dados.taxa} sufixoValor="%" rodape={`${dados.resolvidos} resolvido(s)`} />
+                <Kpi i={3} icon={XCircle} cor="#e0574d" label="Recusados" valor={dados.recusados} />
+                <Kpi i={4} icon={ThumbsUp} cor="#7c5cff" label="Taxa de aprovação" valor={dados.taxa} sufixoValor="%" rodape={`${dados.resolvidos} resolvido(s)`} />
               </div>
 
               <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -286,9 +287,6 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
                 </Painel>
               </div>
 
-              <p className="mt-5 flex items-center gap-1.5 text-xs text-ink-dim">
-                <XCircle size={13} /> {dados.recusados} recusado(s) no período
-              </p>
             </>
           )}
         </div>

@@ -9,20 +9,45 @@ export const apiAtiva = BASE.length > 0;
 
 const TOKEN_KEY = 'contato-web:token';
 
-export function getToken(): string | null {
+/**
+ * Sessão POR ABA: cada aba guarda a própria sessão em sessionStorage, então é
+ * possível ficar logado em contas diferentes em abas diferentes (trocar de
+ * conta numa aba não afeta a outra). Para manter o login ao reabrir o navegador
+ * / abrir uma aba nova, a sessão é "semeada" a partir do localStorage na 1ª
+ * leitura; ao logar, grava-se nos dois (sessionStorage = esta aba; localStorage
+ * = última sessão, herdada por abas novas).
+ */
+export function lerArmazenado(chave: string): string | null {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    let v = sessionStorage.getItem(chave);
+    if (v === null) {
+      v = localStorage.getItem(chave);
+      if (v !== null) sessionStorage.setItem(chave, v); // fixa nesta aba
+    }
+    return v;
   } catch {
     return null;
   }
 }
-export function setToken(token: string | null) {
+export function gravarArmazenado(chave: string, valor: string | null) {
   try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    if (valor !== null) {
+      sessionStorage.setItem(chave, valor);
+      localStorage.setItem(chave, valor);
+    } else {
+      sessionStorage.removeItem(chave);
+      localStorage.removeItem(chave);
+    }
   } catch {
     /* ignora */
   }
+}
+
+export function getToken(): string | null {
+  return lerArmazenado(TOKEN_KEY);
+}
+export function setToken(token: string | null) {
+  gravarArmazenado(TOKEN_KEY, token);
 }
 
 export class ApiError extends Error {
@@ -107,6 +132,7 @@ export interface ChamadoApi {
   motivoRecusa: string | null;
   mensagens?: MensagemApi[];
   criadoEm: string;
+  atualizadoEm?: string;
 }
 export interface FilasApi {
   emEspera: ChamadoApi[];

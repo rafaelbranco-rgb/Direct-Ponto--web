@@ -16,7 +16,7 @@ import { CATEGORIAS, statusCor } from '../data/catalog';
 import { colaboradorPorId } from '../data/mock';
 import type { Chamado, StatusChamado } from '../data/types';
 import { useTema } from '../context/theme';
-import { dataBR, diaMes, iniciais } from '../lib/format';
+import { dataBR, dataHoraBR, diaMes, iniciais } from '../lib/format';
 
 const RESULTADO: Record<StatusChamado, { txt: string; icon: LucideIcon; cls: string }> = {
   APROVADO: { txt: 'Justificativa aceita', icon: CheckCircle2, cls: 'text-[#1f9e63] bg-[rgba(43,182,115,0.12)]' },
@@ -201,6 +201,7 @@ function DetalheProtocolo({ chamado }: { chamado: Chamado }) {
   const cat = CATEGORIAS[chamado.categoria];
   const res = RESULTADO[chamado.status];
   const Icone = res.icon;
+  const encerrado = chamado.status === 'APROVADO' || chamado.status === 'RECUSADO';
 
   return (
     <section className="flex min-w-0 flex-1 animate-fade-in flex-col">
@@ -224,8 +225,15 @@ function DetalheProtocolo({ chamado }: { chamado: Chamado }) {
           {/* Resultado */}
           <div className={`mb-4 flex items-start gap-2 rounded-xl px-4 py-3 ${res.cls}`}>
             <Icone size={20} className="mt-0.5 shrink-0" />
-            <div>
+            <div className="min-w-0">
               <div className="font-bold">{res.txt}</div>
+              {encerrado && (
+                <div className="text-sm opacity-90">
+                  {chamado.status === 'APROVADO' ? 'Aprovado' : 'Recusado'}
+                  {chamado.atendente ? ` por ${chamado.atendente}` : ''}
+                  {chamado.atualizadoEm ? ` em ${dataHoraBR(chamado.atualizadoEm)}` : ''}
+                </div>
+              )}
               {chamado.status === 'RECUSADO' && chamado.motivoRecusa && (
                 <div className="text-sm opacity-90">Motivo: {chamado.motivoRecusa}</div>
               )}
