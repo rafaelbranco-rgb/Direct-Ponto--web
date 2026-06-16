@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { api, apiAtiva, setToken, type UsuarioApi } from '../lib/api';
+import { api, apiAtiva, ApiError, getToken, setToken, type UsuarioApi } from '../lib/api';
 
 export type Papel = 'atendente' | 'supervisor';
 
@@ -58,6 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Com backend ativo, revalida a sessão pelo token ao abrir.
   useEffect(() => {
     if (!apiAtiva) return;
+    // Sem token salvo não há o que validar — vai para o login.
+    if (!getToken()) {
+      setGestor(null);
+      salvarCache(null);
+      setCarregando(false);
+      return;
+    }
     let vivo = true;
     api
       .me()
@@ -67,11 +74,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setGestor(g);
         salvarCache(g);
       })
-      .catch(() => {
+      .catch((e) => {
         if (!vivo) return;
-        setToken(null);
-        setGestor(null);
-        salvarCache(null);
+        // Só desloga se o backend REJEITOU o token (sessão inválida/expirada).
+        // Erro de rede (offline, Wi-Fi fraco) mantém a sessão em cache na tela.
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          setToken(null);
+          setGestor(null);
+          salvarCache(null);
+        }
       })
       .finally(() => vivo && setCarregando(false));
     return () => {
