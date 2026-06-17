@@ -41,13 +41,35 @@ const PERIODOS: { dias: Periodo; label: string }[] = [
 const ABERTO: StatusChamado[] = ['PENDENTE', 'EM_ATENDIMENTO'];
 const COR_CAT = 'var(--c-gold)';
 const COR_SETOR = 'var(--c-brand-soft)';
+const COR_RECUSADO = '#e0574d';
+
+/** "2026-06" -> "Junho de 2026" (rótulo do seletor de mês). */
+function labelMes(ym: string): string {
+  const [y, m] = ym.split('-').map(Number);
+  const s = new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export function Relatorios({ chamados }: { chamados: Chamado[] }) {
   const [periodo, setPeriodo] = useState<Periodo>(0);
+  // Filtro por mês (YYYY-MM). '' = usa o período rolante (7/30/90/tudo) acima.
+  const [mes, setMes] = useState<string>('');
+
+  // Meses presentes nos chamados (mais recente primeiro), para o seletor.
+  const meses = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of chamados) set.add(c.criadoEm.slice(0, 7));
+    return [...set].sort().reverse();
+  }, [chamados]);
 
   const dados = useMemo(() => {
     const corte = periodo ? Date.now() - periodo * 86_400_000 : 0;
-    const base = corte ? chamados.filter((c) => new Date(c.criadoEm).getTime() >= corte) : chamados;
+    // Mês selecionado tem prioridade; senão usa a janela rolante (período).
+    const base = mes
+      ? chamados.filter((c) => c.criadoEm.slice(0, 7) === mes)
+      : corte
+        ? chamados.filter((c) => new Date(c.criadoEm).getTime() >= corte)
+        : chamados;
 
     const total = base.length;
     const conta = (s: StatusChamado) => base.filter((c) => c.status === s).length;
@@ -72,18 +94,23 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
     const atendentes = [...porAtendente.entries()].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
 
     const porSetor = new Map<string, number>();
+    const recusadosSetorMap = new Map<string, number>();
     for (const c of base) {
-      const setor = colaboradorPorId(c.colaboradorId)?.setor ?? '—';
+      const setor = colaboradorPorId(c.colaboradorId)?.setor || '—';
       porSetor.set(setor, (porSetor.get(setor) ?? 0) + 1);
+      if (c.status === 'RECUSADO') recusadosSetorMap.set(setor, (recusadosSetorMap.get(setor) ?? 0) + 1);
     }
     const setores = [...porSetor.entries()].map(([setor, n]) => ({ setor, n })).sort((a, b) => b.n - a.n);
+    const setoresRecusados = [...recusadosSetorMap.entries()]
+      .map(([setor, n]) => ({ setor, n }))
+      .sort((a, b) => b.n - a.n);
 
-    return { base, total, aprovados, recusados, resolvidos, emAberto, taxa, categorias, status, atendentes, setores };
-  }, [chamados, periodo]);
+    return { base, total, aprovados, recusados, resolvidos, emAberto, taxa, categorias, status, atendentes, setores, setoresRecusados };
+  }, [chamados, periodo, mes]);
 
   const vazio = dados.total === 0;
-  const periodoLabel = PERIODOS.find((p) => p.dias === periodo)!.label;
-  const sufixo = periodo ? `${periodo}d` : 'tudo';
+  const periodoLabel = mes ? labelMes(mes) : PERIODOS.find((p) => p.dias === periodo)!.label;
+  const sufixo = mes ? mes : periodo ? `${periodo}d` : 'tudo';
   const maxAtend = Math.max(1, ...dados.atendentes.map((a) => a.n));
 
   function exportarCSV() {
@@ -103,6 +130,7 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
         { titulo: 'Por status', itens: dados.status.map((s) => ({ label: s.label, n: s.n })) },
         { titulo: 'Por atendente', itens: dados.atendentes.map((a) => ({ label: a.nome, n: a.n })) },
         { titulo: 'Por setor', itens: dados.setores.map((s) => ({ label: s.setor, n: s.n })) },
+        { titulo: 'Recusados por setor', itens: dados.setoresRecusados.map((s) => ({ label: s.setor, n: s.n })) },
       ],
     });
   }
@@ -115,13 +143,29 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
           <p className="text-xs text-ink-dim">Visão geral das justificativas de ponto</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 rounded-xl border border-line bg-surface/60 p-1">
+          {/* Filtro por mês — quando definido, tem prioridade sobre o período. */}
+          <select
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            title="Filtrar por mês"
+            className="rounded-xl border border-line bg-surface/60 px-3 py-2 text-xs font-semibold text-ink-dim outline-none transition hover:bg-surface-2">
+            <option value="">Todos os meses</option>
+            {meses.map((m) => (
+              <option key={m} value={m}>
+                {labelMes(m)}
+              </option>
+            ))}
+          </select>
+          <div className={`flex gap-1 rounded-xl border border-line bg-surface/60 p-1 ${mes ? 'opacity-40' : ''}`}>
             {PERIODOS.map((p) => (
               <button
                 key={p.dias}
-                onClick={() => setPeriodo(p.dias)}
+                onClick={() => {
+                  setMes(''); // período e mês são mutuamente exclusivos
+                  setPeriodo(p.dias);
+                }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                  periodo === p.dias ? 'bg-brand text-white' : 'text-ink-dim hover:bg-surface-2'
+                  !mes && periodo === p.dias ? 'bg-brand text-white' : 'text-ink-dim hover:bg-surface-2'
                 }`}>
                 {p.label}
               </button>
@@ -251,6 +295,34 @@ export function Relatorios({ chamados }: { chamados: Chamado[] }) {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                </Painel>
+
+                {/* Barras horizontais — recusados por setor */}
+                <Painel titulo="Recusados por setor" delay={210}>
+                  {dados.setoresRecusados.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-ink-dim">Nenhum chamado recusado no período.</p>
+                  ) : (
+                    <div style={{ height: Math.max(180, dados.setoresRecusados.length * 40) }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dados.setoresRecusados} layout="vertical" margin={{ left: 6, right: 28, top: 4, bottom: 4 }}>
+                          <CartesianGrid horizontal={false} stroke="var(--c-line)" strokeDasharray="3 3" />
+                          <XAxis type="number" hide allowDecimals={false} />
+                          <YAxis
+                            type="category"
+                            dataKey="setor"
+                            width={130}
+                            tick={{ fill: 'var(--c-ink-dim)', fontSize: 12 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip cursor={{ fill: 'var(--c-surface2)', opacity: 0.35 }} content={<DicaGrafico chave="setor" />} />
+                          <Bar dataKey="n" fill={COR_RECUSADO} radius={[0, 6, 6, 0]} barSize={18} animationDuration={900} animationEasing="ease-out">
+                            <LabelList dataKey="n" position="right" fill="var(--c-ink-dim)" fontSize={12} fontWeight={700} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </Painel>
 
                 {/* Ranking — atendente */}
