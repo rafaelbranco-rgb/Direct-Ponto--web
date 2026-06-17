@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Footprints,
   Hourglass,
+  MessageCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ export const CATEGORIAS: Record<CategoriaCodigo, { label: string; icon: LucideIc
   ESQUECIMENTO: { label: 'Esquecimento', icon: HelpCircle },
   SAIDA_EXPEDIENTE: { label: 'Saída Durante o Expediente', icon: Footprints },
   BANCO_HORAS: { label: 'Banco de Horas', icon: Hourglass },
+  DUVIDAS: { label: 'Dúvidas', icon: MessageCircle },
 };
 
 type Esquema = 'light' | 'dark';

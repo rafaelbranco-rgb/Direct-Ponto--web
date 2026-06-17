@@ -9,7 +9,8 @@ export type CategoriaCodigo =
   | 'SAIDA_ANTECIPADA'
   | 'ESQUECIMENTO'
   | 'SAIDA_EXPEDIENTE'
-  | 'BANCO_HORAS';
+  | 'BANCO_HORAS'
+  | 'DUVIDAS';
 
 /** Status do chamado na ótica do atendimento (gestor). */
 export type StatusChamado = 'PENDENTE' | 'EM_ATENDIMENTO' | 'APROVADO' | 'RECUSADO';
