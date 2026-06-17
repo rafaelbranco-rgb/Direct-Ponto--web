@@ -354,7 +354,9 @@ export function Console() {
                 <Loader2 size={28} className="animate-spin" />
               </div>
             }>
-            <Relatorios chamados={chamados} />
+            {/* Relatórios = visão GERAL (todos os chamados, igual p/ qualquer
+                conta), por isso usa o histórico completo — não a fila pessoal. */}
+            <Relatorios chamados={apiAtiva ? historico : chamados} />
           </Suspense>
         )}
       </div>
