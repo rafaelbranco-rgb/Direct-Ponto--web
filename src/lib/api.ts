@@ -201,6 +201,10 @@ export const api = {
     req<{ ok: boolean; senhaTemporaria?: string }>('POST', `/usuarios/colaboradores/${id}/resetar-senha`, {
       novaSenha,
     }),
+  resetarSenhaAtendente: (id: string, novaSenha?: string) =>
+    req<{ ok: boolean; senhaTemporaria?: string }>('POST', `/usuarios/atendentes/${id}/resetar-senha`, {
+      novaSenha,
+    }),
   trocarMinhaSenha: (senhaAtual: string | undefined, novaSenha: string) =>
     req<{ ok: boolean }>('PATCH', '/usuarios/me/senha', { senhaAtual, novaSenha }),
 };

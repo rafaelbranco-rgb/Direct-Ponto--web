@@ -167,6 +167,9 @@ export function Settings() {
           <section className="mb-6">
             <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-ink-dim">Usuários do sistema</h2>
             <CriarUsuario />
+            <div className="mt-3">
+              <ResetAtendente />
+            </div>
           </section>
         )}
 
@@ -291,6 +294,80 @@ function ResetColaborador() {
             </div>
             <button
               onClick={() => resetar(c.id)}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-dim transition hover:bg-surface-2">
+              <RotateCcw size={14} /> Resetar senha
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Lista os atendentes/gestores e permite resetar a senha de cada um (gera
+ *  temporária e força a troca no próximo acesso). */
+function ResetAtendente() {
+  const [lista, setLista] = useState<UsuarioApi[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [temp, setTemp] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const r = await api.listarAtendentes();
+        if (vivo) setLista(r);
+      } catch (err) {
+        if (vivo) setErro(err instanceof Error ? err.message : 'Falha ao carregar atendentes.');
+      } finally {
+        if (vivo) setCarregando(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function resetar(id: string) {
+    setErro('');
+    try {
+      const r = await api.resetarSenhaAtendente(id);
+      setTemp((p) => ({ ...p, [id]: r.senhaTemporaria ?? 'definida' }));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível resetar.');
+    }
+  }
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="mb-2 flex items-center gap-2 text-ink">
+        <RotateCcw size={18} className="text-brand-soft" />
+        <span className="font-semibold">Resetar senha de um atendente/gestor</span>
+      </div>
+      {erro && <p className="mb-2 text-sm font-semibold text-[#ff9c8e]">{erro}</p>}
+      <div className="flex flex-col divide-y divide-line">
+        {carregando && <p className="py-3 text-center text-sm text-ink-dim">Carregando…</p>}
+        {!carregando && lista.length === 0 && (
+          <p className="py-3 text-center text-sm text-ink-dim">Nenhum atendente cadastrado.</p>
+        )}
+        {lista.map((a) => (
+          <div key={a.id} className="flex items-center gap-3 py-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/20 text-xs font-bold text-brand-soft">
+              {iniciais(a.nome)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-ink">{a.nome}</div>
+              <div className="text-xs text-ink-dim">{a.email ?? a.setor ?? 'Atendimento'}</div>
+              {temp[a.id] && (
+                <div className="mt-1 text-xs font-semibold text-[#3fcf8e]">
+                  Senha temporária: <span className="font-mono">{temp[a.id]}</span> — informe ao usuário (ele troca no
+                  próximo acesso).
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => resetar(a.id)}
               className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-dim transition hover:bg-surface-2">
               <RotateCcw size={14} /> Resetar senha
             </button>
